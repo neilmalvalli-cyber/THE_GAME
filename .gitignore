@@ -1,0 +1,16 @@
+# Dependencies & Build artifacts
+node_modules/
+.next/
+tHEHUNT/node_modules/
+tHEHUNT/.next/
+
+# Environment secrets (NEVER COMMIT)
+.env*
+!.env.example
+tHEHUNT/.env*
+!tHEHUNT/.env.example
+
+# Exclude other local folders and draft documents
+ctf-D/
+THE_GAME_Build_and_Technical_Plan.md
+THE_GAME_Vision_and_Context.md
