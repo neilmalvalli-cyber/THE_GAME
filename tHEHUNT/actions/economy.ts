@@ -96,6 +96,26 @@ export async function purchaseHint(input: unknown): Promise<ActionResult<{ hint_
 
   const adminDb = createAdminClient()
 
+  // Check if team is under an active TIME LOCK
+  const { data: activeTimeLock } = await adminDb
+    .from('team_powerups')
+    .select('id, expires_at, powerups!inner(effect_type)')
+    .eq('team_id', membership.team_id)
+    .eq('status', 'active')
+    .eq('powerups.effect_type', 'time_lock')
+    .gt('expires_at', new Date().toISOString())
+    .limit(1)
+    .maybeSingle()
+
+  if (activeTimeLock) {
+    const remainingSec = Math.max(0, Math.floor((new Date(activeTimeLock.expires_at).getTime() - Date.now()) / 1000))
+    return {
+      success: false,
+      error: `🧊 TERMINAL FROZEN: Time Lock in effect! Hint decryptors are frozen for another ${remainingSec}s.`,
+      code: 'TIME_LOCKED',
+    }
+  }
+
   // Get the level's hint info
   const { data: level } = await adminDb
     .from('challenge_levels')

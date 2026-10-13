@@ -36,6 +36,7 @@ export default async function DashboardPage() {
   const activeEvent = eventRes.data
   const marketData = marketRes.data
   const surpriseGame = surpriseRes.data || null
+  const isTimeLocked = marketData?.active_sabotage?.type === 'time_lock' && (marketData.active_sabotage.seconds_remaining || 0) > 0
 
   return (
     <div className="min-h-screen bg-[#090a0f] text-zinc-100 font-sans selection:bg-amber-500 selection:text-black">
@@ -207,11 +208,18 @@ export default async function DashboardPage() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-xl font-black text-white tracking-wide uppercase">
-                    Case Files
+                  <h1 className="text-xl font-black text-white tracking-wide uppercase flex items-center gap-2">
+                    <span>Case Files</span>
+                    {isTimeLocked && (
+                      <span className="text-xs font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-500/40 px-2.5 py-0.5 rounded-full uppercase animate-pulse">
+                        🧊 Terminals Frozen (Time Lock)
+                      </span>
+                    )}
                   </h1>
                   <p className="text-zinc-400 text-xs">
-                    Select a case file to inspect levels and submit decryption solutions.
+                    {isTimeLocked
+                      ? '⚠️ Stasis lockdown active. All case files are frozen until rival Time Lock expires.'
+                      : 'Select a case file to inspect levels and submit decryption solutions.'}
                   </p>
                 </div>
               </div>
@@ -221,7 +229,7 @@ export default async function DashboardPage() {
                   <p className="text-zinc-400 text-sm">No case files active yet. Stay alert for kickoff.</p>
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className={`grid md:grid-cols-2 lg:grid-cols-3 gap-6 ${isTimeLocked ? 'pointer-events-none select-none' : ''}`}>
                   {challenges.map((c: any) => {
                     const challengeId = c.id || c.challenge_id
                     const title = c.title || c.challenge_title || 'Untitled Case File'
@@ -229,6 +237,34 @@ export default async function DashboardPage() {
                     const solved = Number(c.solved_levels) || 0
                     const progressPct = c.progress_percentage ?? (total > 0 ? Math.round((solved / total) * 100) : 0)
                     const isFullySolved = solved >= total && total > 0
+
+                    if (isTimeLocked) {
+                      return (
+                        <div
+                          key={challengeId}
+                          className="group relative block p-6 rounded-2xl border border-cyan-500/30 bg-cyan-950/20 shadow-lg cursor-not-allowed select-none overflow-hidden"
+                        >
+                          <div className="absolute inset-0 bg-cyan-950/85 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-20">
+                            <span className="text-3xl animate-pulse">🧊🔒</span>
+                            <span className="text-xs font-mono font-black text-cyan-300 uppercase tracking-widest mt-2">
+                              FROZEN IN STASIS
+                            </span>
+                            <span className="text-[10px] text-cyan-200/80 font-mono mt-1">
+                              Time Lock Active // Terminal Disabled
+                            </span>
+                          </div>
+
+                          <div className="flex items-start justify-between mb-3 opacity-30">
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-zinc-800 text-zinc-300 rounded">
+                              {c.category || 'General'}
+                            </span>
+                          </div>
+                          <h3 className="text-base font-bold text-white mb-2 opacity-30">
+                            {title}
+                          </h3>
+                        </div>
+                      )
+                    }
 
                     return (
                       <Link

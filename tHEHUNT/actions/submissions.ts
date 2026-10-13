@@ -95,6 +95,26 @@ export async function submitAnswer(
       return { success: false, error: 'Event is not active', code: 'EVENT_NOT_LIVE' }
     }
 
+    // 7.5 Check if team is under an active TIME LOCK
+    const { data: activeTimeLock } = await adminDb
+      .from('team_powerups')
+      .select('id, expires_at, powerups!inner(effect_type)')
+      .eq('team_id', teamId)
+      .eq('status', 'active')
+      .eq('powerups.effect_type', 'time_lock')
+      .gt('expires_at', new Date().toISOString())
+      .limit(1)
+      .maybeSingle()
+
+    if (activeTimeLock) {
+      const remainingSec = Math.max(0, Math.floor((new Date(activeTimeLock.expires_at).getTime() - Date.now()) / 1000))
+      return {
+        success: false,
+        error: `🧊 TERMINAL FROZEN: A rival team deployed a Time Lock on your terminal! All actions are frozen for another ${remainingSec}s.`,
+        code: 'TIME_LOCKED'
+      }
+    }
+
     // 8. Check release time
     if (level.release_at && new Date(level.release_at) > new Date()) {
       return { success: false, error: 'This level is not yet available', code: 'LEVEL_NOT_RELEASED' }

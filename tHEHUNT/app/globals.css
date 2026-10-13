@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #090a0f;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -12,15 +12,176 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ============================================================
+   CYBER GLITCH ATTACK VISUAL EFFECTS
+   ============================================================ */
+@keyframes glitch-jitter {
+  0% { transform: translate(0, 0) skewX(0deg); }
+  10% { transform: translate(-3px, 1px) skewX(-2deg); }
+  20% { transform: translate(3px, -1px) skewX(2deg); filter: hue-rotate(90deg); }
+  30% { transform: translate(-2px, -2px) skewX(0deg); }
+  40% { transform: translate(2px, 2px) skewX(-1deg); }
+  50% { transform: translate(-1px, 2px) skewX(3deg); filter: hue-rotate(180deg); }
+  60% { transform: translate(3px, 1px) skewX(0deg); }
+  70% { transform: translate(0, -2px) skewX(-2deg); }
+  80% { transform: translate(-2px, 1px) skewX(1deg); filter: hue-rotate(270deg); }
+  90% { transform: translate(2px, -1px) skewX(0deg); }
+  100% { transform: translate(0, 0) skewX(0deg); }
+}
+
+@keyframes glitch-screen-shake {
+  0% { transform: none; filter: none; }
+  2% { transform: translate(-3px, 1px); filter: contrast(130%) hue-rotate(30deg); }
+  4% { transform: translate(3px, -2px); filter: none; }
+  6% { transform: none; }
+  24% { transform: translate(-2px, 0); filter: drop-shadow(-2px 0 #ff0055) drop-shadow(2px 0 #00ffff); }
+  26% { transform: translate(4px, 1px) skewX(1deg); }
+  28% { transform: none; filter: none; }
+  52% { transform: translate(2px, -3px) skewX(-2deg); filter: invert(10%); }
+  54% { transform: none; filter: none; }
+  78% { transform: translate(-4px, 2px); filter: drop-shadow(3px 0 #ff0055); }
+  80% { transform: translate(2px, -1px); }
+  82% { transform: none; filter: none; }
+  94% { transform: translate(-2px, 1px) skewX(1.5deg); filter: contrast(140%); }
+  96% { transform: none; }
+}
+
+@keyframes glitch-text-twitch {
+  0%, 100% { transform: none; }
+  10% { transform: skewX(-3deg) translate(-2px, 0); }
+  12% { transform: skewX(3deg) translate(2px, 0); }
+  14% { transform: none; }
+  50% { transform: skewX(2deg); }
+  52% { transform: skewX(-2deg); }
+  54% { transform: none; }
+  85% { transform: translate(-1px, 1px); }
+  87% { transform: translate(1px, -1px); }
+  89% { transform: none; }
+}
+
+@keyframes scanline-roll {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes glitch-slice-roll {
+  0% { top: -20px; opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { top: 105vh; opacity: 0; }
+}
+
+@keyframes static-noise {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.35; }
+}
+
+/* Full page jitter when Glitch Attack is active */
+body.glitch-attack-active {
+  animation: glitch-screen-shake 3s infinite steps(1);
+  overflow-x: hidden;
+}
+
+body.glitch-attack-active h1,
+body.glitch-attack-active h2,
+body.glitch-attack-active h3,
+body.glitch-attack-active .glitch-active-text {
+  animation: glitch-text-twitch 1.8s infinite;
+  text-shadow: 2px 0 #ff0055, -2px 0 #00ffff;
+}
+
+.glitch-attack-screen {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9990;
+  overflow: hidden;
+  background: radial-gradient(circle, transparent 65%, rgba(0, 0, 0, 0.75) 100%);
+}
+
+.glitch-attack-screen::before {
+  content: " ";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.35) 0px,
+    rgba(0, 0, 0, 0.35) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.glitch-attack-screen::after {
+  content: " ";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 0, 80, 0.05),
+    rgba(0, 255, 234, 0.04),
+    rgba(255, 0, 80, 0.05)
+  );
+  mix-blend-mode: color-dodge;
+  animation: static-noise 0.2s steps(2) infinite;
+  pointer-events: none;
+}
+
+.glitch-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 0, 80, 0.75), transparent);
+  animation: scanline-roll 3s linear infinite;
+  box-shadow: 0 0 20px rgba(255, 0, 80, 0.9);
+}
+
+.glitch-slice {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background: rgba(255, 0, 80, 0.35);
+  box-shadow: 0 0 15px rgba(0, 255, 234, 0.6);
+  animation: glitch-slice-roll 2.2s linear infinite;
+  pointer-events: none;
+}
+
+.glitch-jitter-active {
+  animation: glitch-jitter 0.6s infinite ease-in-out;
+  text-shadow: 2px 0 #ff0055, -2px 0 #00ffff;
+}
+
+/* ============================================================
+   TIME LOCK FROZEN ICE LOCKDOWN EFFECTS
+   ============================================================ */
+@keyframes ice-shimmer {
+  0% { opacity: 0.9; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.2); }
+  100% { opacity: 0.9; filter: brightness(1); }
+}
+
+.frozen-glass {
+  background: radial-gradient(circle at center, rgba(8, 47, 73, 0.92) 0%, rgba(2, 12, 27, 0.98) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: ice-shimmer 3s ease-in-out infinite;
+}
+
+.time-lock-frozen-panel {
+  pointer-events: none !important;
+  user-select: none !important;
+  filter: blur(2px) grayscale(50%);
+  opacity: 0.3;
+  transition: all 0.3s ease;
 }

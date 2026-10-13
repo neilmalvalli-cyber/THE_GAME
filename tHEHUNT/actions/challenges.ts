@@ -123,6 +123,12 @@ export async function getChallengeLevels(challengeId: string): Promise<ActionRes
     hint_text?: string
     attempt_count: number
   }>
+  active_sabotage?: {
+    type: string
+    name: string
+    expires_at: string
+    seconds_remaining: number
+  } | null
 }>> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -218,7 +224,46 @@ export async function getChallengeLevels(challengeId: string): Promise<ActionRes
     }
   })
 
-  return { success: true, data: { challenge: challenge as Challenge, levels: enrichedLevels } }
+  // Check active sabotage for this team
+  const { data: activeAttacks } = await adminDb
+    .from('team_powerups')
+    .select('id, expires_at, powerups(name, effect_type)')
+    .eq('team_id', membership.team_id)
+    .eq('status', 'active')
+
+  const timeLockAttack = (activeAttacks || []).find(att => {
+    const p = att.powerups as any
+    return p?.effect_type === 'time_lock' && att.expires_at && new Date(att.expires_at).getTime() > Date.now()
+  })
+
+  const glitchAttack = (activeAttacks || []).find(att => {
+    const p = att.powerups as any
+    return p?.effect_type === 'glitch_attack' && att.expires_at && new Date(att.expires_at).getTime() > Date.now()
+  })
+
+  const chosenAttack = timeLockAttack || glitchAttack
+  let activeSabotage = null
+  if (chosenAttack) {
+    const p = chosenAttack.powerups as any
+    const remaining = Math.max(0, Math.floor((new Date(chosenAttack.expires_at!).getTime() - Date.now()) / 1000))
+    if (remaining > 0) {
+      activeSabotage = {
+        type: p?.effect_type || '',
+        name: p?.name || (p?.effect_type === 'time_lock' ? 'Time Lock' : 'Glitch Attack'),
+        expires_at: chosenAttack.expires_at!,
+        seconds_remaining: remaining,
+      }
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      challenge: challenge as Challenge,
+      levels: enrichedLevels,
+      active_sabotage: activeSabotage,
+    },
+  }
 }
 
 // ============================================================

@@ -172,6 +172,11 @@ export async function getMarketData(): Promise<ActionResult<MarketData>> {
       hasActiveShield = true
     }
 
+    // Do not display hostile enemy sabotage inflicted on us in our usable inventory
+    if (item.status === 'active' && (p.effect_type === 'glitch_attack' || p.effect_type === 'time_lock')) {
+      continue
+    }
+
     inventory.push({
       id: item.id,
       powerup_id: item.powerup_id,
@@ -195,17 +200,19 @@ export async function getMarketData(): Promise<ActionResult<MarketData>> {
     .gt('expires_at', new Date().toISOString())
 
   let activeSabotage: ActiveSabotage | null = null
-  for (const att of activeAttacks || []) {
-    const p = att.powerups || {}
-    if (p.effect_type === 'glitch_attack' || p.effect_type === 'time_lock') {
-      const remaining = Math.max(0, Math.floor((new Date(att.expires_at).getTime() - Date.now()) / 1000))
-      activeSabotage = {
-        type: p.effect_type,
-        name: p.name || 'Sabotage Attack',
-        expires_at: att.expires_at,
-        seconds_remaining: remaining,
-      }
-      break
+  // Prioritize time_lock over glitch_attack
+  const timeLockAttack = (activeAttacks || []).find(att => att.powerups?.effect_type === 'time_lock')
+  const glitchAttack = (activeAttacks || []).find(att => att.powerups?.effect_type === 'glitch_attack')
+  const chosenAttack = timeLockAttack || glitchAttack
+
+  if (chosenAttack) {
+    const p = chosenAttack.powerups || {}
+    const remaining = Math.max(0, Math.floor((new Date(chosenAttack.expires_at).getTime() - Date.now()) / 1000))
+    activeSabotage = {
+      type: p.effect_type,
+      name: p.name || (p.effect_type === 'time_lock' ? 'Time Lock' : 'Glitch Attack'),
+      expires_at: chosenAttack.expires_at,
+      seconds_remaining: remaining,
     }
   }
 
@@ -651,3 +658,69 @@ export async function adminCloseBlackMarket(): Promise<ActionResult> {
 
   return { success: true }
 }
+
+// ============================================================
+// REAL-TIME SABOTAGE STATUS CHECK (Used by HUD & Pollers)
+// ============================================================
+
+export async function getActiveSabotage(): Promise<ActionResult<{
+  active_sabotage: ActiveSabotage | null
+  has_active_shield: boolean
+}>> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const { data: membership } = await supabase
+    .from('team_members')
+    .select('team_id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!membership) return { success: false, error: 'Not on a team' }
+
+  const adminDb = createAdminClient()
+  const { data: activeAttacks } = await adminDb
+    .from('team_powerups')
+    .select('id, expires_at, powerups(name, effect_type)')
+    .eq('team_id', membership.team_id)
+    .eq('status', 'active')
+
+  let hasActiveShield = false
+  const timeLockAttack = (activeAttacks || []).find(att => {
+    const p = att.powerups as any
+    if (p?.effect_type === 'ghost_shield') hasActiveShield = true
+    return p?.effect_type === 'time_lock' && att.expires_at && new Date(att.expires_at).getTime() > Date.now()
+  })
+
+  const glitchAttack = (activeAttacks || []).find(att => {
+    const p = att.powerups as any
+    if (p?.effect_type === 'ghost_shield') hasActiveShield = true
+    return p?.effect_type === 'glitch_attack' && att.expires_at && new Date(att.expires_at).getTime() > Date.now()
+  })
+
+  const chosen = timeLockAttack || glitchAttack
+  let activeSabotage: ActiveSabotage | null = null
+
+  if (chosen) {
+    const p = chosen.powerups as any
+    const remaining = Math.max(0, Math.floor((new Date(chosen.expires_at!).getTime() - Date.now()) / 1000))
+    if (remaining > 0) {
+      activeSabotage = {
+        type: p?.effect_type || '',
+        name: p?.name || (p?.effect_type === 'time_lock' ? 'Time Lock' : 'Glitch Attack'),
+        expires_at: chosen.expires_at!,
+        seconds_remaining: remaining,
+      }
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      active_sabotage: activeSabotage,
+      has_active_shield: hasActiveShield,
+    },
+  }
+}
+
