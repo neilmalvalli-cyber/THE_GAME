@@ -53,6 +53,8 @@ async function run() {
     await adm.fill('input[name=admin-password]', ADMIN_PASSWORD);
     await adm.getByRole('button', { name: 'Login', exact: true }).click();
     await adm.getByRole('button', { name: 'Market Operations' }).click({ timeout: 60000 });
+    await adm.getByTestId('minigame-ops').waitFor({ timeout: 30000 });
+    await adm.waitForTimeout(6000); // the dashboard pulls the real market state every 4 s
     if (await adm.getByRole('button', { name: 'Activate Black Market' }).count()) {
       await adm.getByRole('button', { name: 'Activate Black Market' }).click();
       await adm.getByRole('button', { name: 'Confirm activation' }).click();
