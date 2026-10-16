@@ -88,9 +88,10 @@ async function run() {
     await page.mouse.move(pt.x, pt.y); await page.waitForTimeout(600); await page.mouse.click(pt.x, pt.y);
     cy.clickInspects = await until(async () => (await st()).market === 'ITEM_INSPECTED', 90000, 'inspect by click').then(() => true).catch(() => false);
     if (!cy.clickInspects) { await dev(() => window.THE_GAME_DEV.marketController.instance.inspectMarketItem('hint_drop')); await until(async () => (await st()).market === 'ITEM_INSPECTED', 60000, 'inspect'); }
+    await page.mouse.move(4, 700); // pointer off the table: no hover after the item goes back
     cy.inspected = await sample(4000);
     await dev(() => window.THE_GAME_DEV.marketController.instance.returnToMarketDesk());
-    await until(async () => (await st()).market === 'MARKET_IDLE', 60000, 'back to desk');
+    await until(async () => ['MARKET_IDLE', 'ITEM_HOVER'].includes((await st()).market), 60000, 'back to desk');
     const id = c === 1 ? 'firewall' : c === 2 ? 'overclock' : 'skip_token';
     const sceneId = await dev((id) => window.THE_GAME_DEV.catalog.getMarketItem(id, 'black').sceneId, id);
     await dev(([id, sceneId]) => { const d = window.THE_GAME_DEV; window.__buy = d.marketController.instance.requestPurchase(sceneId, () => d.backend.purchase(id, 'perf-' + Date.now(), 'black').then((r) => r.ok)); }, [id, sceneId]);
