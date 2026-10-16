@@ -208,7 +208,7 @@ async function run() {
     check('Wrong phone code refused by the server', !phone.ok);
     await a.goto(BASE + '/team/desk');
     await a.waitForFunction(() => window.THE_GAME_DEV?.backend, null, { timeout: 60000 });
-    await a.waitForFunction(() => window.THE_GAME_DEV?.useSceneStore?.getState().deskState === 'DESK_IDLE', null, { timeout: 240000, polling: 1000 }); await a.locator('.topbar__item[aria-label^="Leave"]').click();
+    await a.waitForFunction(() => window.THE_GAME_DEV?.useSceneStore?.getState().deskState === 'DESK_IDLE', null, { timeout: 240000, polling: 1000 }); await a.locator('.topbar__item[aria-label^="Leave"]').click({ force: true }); // visible + idle desk checked above; rAF is starved under software GL
     await a.getByRole('button', { name: 'Return to Login', exact: true }).click();
     await until(a, async () => (await a.evaluate(() => location.pathname)) === '/', 10000, 'logged out');
     await a.goto(BASE + '/team/desk');
