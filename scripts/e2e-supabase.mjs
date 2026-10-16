@@ -139,6 +139,15 @@ async function run() {
     check('Admin team list comes from the server (both teams)', true);
 
     // ------------------------------------------------------------ markets (server rules)
+    // start from a known market state (an earlier run may have left the Black Market on)
+    await adm.getByRole('button', { name: 'Market Operations' }).click();
+    if (await adm.getByRole('button', { name: 'Deactivate Black Market' }).count()) {
+      await adm.getByRole('button', { name: 'Deactivate Black Market' }).click();
+      await adm.getByRole('button', { name: 'Confirm deactivation' }).click();
+    }
+    if (await adm.getByRole('button', { name: 'Reopen market' }).count()) await adm.getByRole('button', { name: 'Reopen market' }).click();
+    await until(adm, async () => (await adm.getByTestId('black-status').innerText()).toLowerCase().includes('locked') || !(await adm.getByTestId('black-status').innerText()).toLowerCase().includes('active'), 15000, 'BM locked');
+    await until(a, async () => (await store(a, () => window.THE_GAME_DEV.marketState.getMarketState().blackMarketStatus)) === 'locked', 15000, 'team sees BM locked');
     const buy = (page, id, market, key) => store(page, ([id, market, key]) => window.THE_GAME_DEV.backend.purchase(id, key, market), [id, market, key]);
     const closed = await buy(a, 'firewall', 'black', 'bm-early');
     check('Black Market purchase refused while locked', !closed.ok && closed.reason === 'market-closed', closed.message);
@@ -199,8 +208,8 @@ async function run() {
     check('Wrong phone code refused by the server', !phone.ok);
     await a.goto(BASE + '/team/desk');
     await a.waitForFunction(() => window.THE_GAME_DEV?.backend, null, { timeout: 60000 });
-    await a.getByRole('button', { name: /Exit|Leave/ }).first().click();
-    await a.getByRole('button', { name: 'Return to Login' }).click();
+    await a.waitForFunction(() => window.THE_GAME_DEV?.useSceneStore?.getState().deskState === 'DESK_IDLE', null, { timeout: 240000, polling: 1000 }); await a.locator('.topbar__item[aria-label^="Leave"]').click();
+    await a.getByRole('button', { name: 'Return to Login', exact: true }).click();
     await until(a, async () => (await a.evaluate(() => location.pathname)) === '/', 10000, 'logged out');
     await a.goto(BASE + '/team/desk');
     await until(a, async () => (await a.evaluate(() => location.pathname)) === '/', 10000, 'guarded');
