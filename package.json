@@ -14,7 +14,9 @@
     "seed": "node --no-warnings scripts/generate-seed.mjs",
     "test:e2e:supabase": "node scripts/e2e-supabase.mjs",
     "lab": "NEXT_PUBLIC_GAME_BACKEND=mock NEXT_PUBLIC_MOCK_ADMIN_PASSWORD=\"GameAdmin#2026!\" next build && next start",
-    "test:perf": "node scripts/perf-check.mjs"
+    "test:perf": "node scripts/perf-check.mjs",
+    "lan": "next build && next start -H 0.0.0.0 -p 3000",
+    "dev:lan": "next dev -H 0.0.0.0 -p 3000"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
