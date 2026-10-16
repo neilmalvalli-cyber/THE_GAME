@@ -87,12 +87,12 @@ async function run() {
     await a.goto(BASE + '/team/case/1/level/2');
     await a.locator('#answer, .answer__choices').first().waitFor({ timeout: 60000 });
     await a.fill('#answer', 'definitely wrong');
-    await a.getByRole('button', { name: 'Submit Answer' }).click();
+    await a.locator('.answer__submit').click();
     await a.locator('.answer__feedback.is-error').waitFor();
     check('Wrong answer rejected by the server', /incorrect/i.test(await a.locator('.answer__feedback').innerText()));
     await a.waitForTimeout(1100); // server rate limit: one attempt per second per level
     await a.fill('#answer', ANSWERS['1-2'].toLowerCase());
-    await a.getByRole('button', { name: 'Submit Answer' }).click();
+    await a.locator('.answer__submit').click();
     await a.locator('.answer__feedback.is-success').waitFor();
     const afterSolve = await state(a);
     check('Correct answer verified by the server; coins + level recorded', afterSolve.completed.includes('case-01/level-02') && afterSolve.balance > 100, `balance ${afterSolve.balance}`);

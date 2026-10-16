@@ -158,15 +158,15 @@ async function run() {
   check('Desk render loop paused under the level page', await dev(() => window.THE_GAME_DEV.deskController.instance.paused));
 
   await page.fill('#answer', 'nothing here');
-  await page.getByRole('button', { name: 'Submit Answer' }).click();
+  await page.locator('.answer__submit').click();
   check('Incorrect answer shows an error and allows retry', (await page.locator('.answer__feedback.is-error').innerText()).includes('Incorrect') && (await game()).balance === 100);
   await page.fill('#answer', 'record deleted');
-  await page.getByRole('button', { name: 'Submit Answer' }).click();
+  await page.locator('.answer__submit').click();
   await page.locator('.verified').waitFor();
   const g1 = await game();
   check('Correct answer → VERIFIED, level complete, +150 coins', g1.balance === 250 && g1.completed.includes('case-03/level-02'), `balance ${g1.balance}`);
   check('Top bar balance updates immediately', (await page.locator('.topbar__wallet').innerText()).includes('250'));
-  await page.getByRole('button', { name: 'Submit Answer' }).click();
+  await page.locator('.answer__submit').click();
   check('Repeating a completed level awards nothing', (await game()).balance === 250 && (await page.locator('.answer__feedback').innerText()).includes('already verified'));
 
   await page.getByRole('button', { name: 'Back to Case' }).first().click();
@@ -574,7 +574,7 @@ async function run() {
   await until(async () => (await path()) === '/team/desk' && (await scene()).desk === 'DESK_IDLE', 60000, 'desk from phone');
   check('Back to Desk from the phone', true);
 
-  // ---------------------------------------------------------------- 24 levels, a solved case, fragments
+  // ---------------------------------------------------------------- 25 levels, a solved case, fragments
   const lv = await page.evaluate(async () => {
     const { cases, routes, secrets } = window.THE_GAME_DEV;
     let ok = 0;
@@ -582,7 +582,7 @@ async function run() {
     const frags = cases.CASES.map((c) => cases.caseFragmentLength(c.id));
     return { cases: cases.CASES.length, levels: cases.CASES.map((c) => c.levels.length), ok, frags, answers: cases.CASES.find((c) => c.id === 6).levels.map((l) => secrets.ANSWERS[`6-${l.number}`]) };
   });
-  check('Six cases × four levels, all 24 level routes resolve', lv.cases === 6 && lv.levels.every((n) => n === 4) && lv.ok === 24, `${lv.ok} routes`);
+  check('Six cases (Case 1 has five levels, the rest four), all 25 level routes resolve', lv.cases === 6 && lv.levels.join() === '5,4,4,4,4,4' && lv.ok === 25, `${lv.ok} routes`);
   check('Fragment lengths 3 × 1 + 3 × 2 = 9 digits', lv.frags.filter((n) => n === 1).length === 3 && lv.frags.filter((n) => n === 2).length === 3 && lv.frags.reduce((a, b) => a + b, 0) === 9, lv.frags.join(','));
   const solve = await dev((answers) => {
     const g = window.THE_GAME_DEV.useGameStore.getState();
@@ -669,7 +669,7 @@ async function run() {
   await attack('glitch');
   await page.getByTestId('glitch-fx').waitFor({ timeout: 5000 });
   const fx = await page.evaluate(() => getComputedStyle(document.querySelector('.glitch-fx')).pointerEvents);
-  await page.getByRole('button', { name: 'Submit Answer' }).click({ timeout: 3000 });
+  await page.locator('.answer__submit').click({ timeout: 3000 });
   check('Glitch Attack applies a visual-only glitch; submitting still works', fx === 'none' && (await page.locator('.answer__feedback').innerText()).length > 0, fx);
   await st(() => window.THE_GAME_DEV.useGameStore.setState((s) => ({ inventory: { ...s.inventory, firewall: 1 } })));
   await attack('freeze');
@@ -677,7 +677,7 @@ async function run() {
   check('Firewall blocks the next attack and is used up (team is told)', fw.fw === 0 && !fw.frozen && fw.mail, JSON.stringify(fw));
   await attack('freeze');
   await page.getByTestId('freeze-banner').waitFor({ timeout: 5000 });
-  check('Freeze pauses the progress timer for 60 s and leaves the page usable', (await page.getByTestId('freeze-banner').innerText()).includes('FROZEN') && await page.getByRole('button', { name: 'Submit Answer' }).isEnabled());
+  check('Freeze pauses the progress timer for 60 s and leaves the page usable', (await page.getByTestId('freeze-banner').innerText()).includes('FROZEN') && await page.locator('.answer__submit').isEnabled());
   const noTarget = await st(() => { const g = window.THE_GAME_DEV.useGameStore; g.setState((s) => ({ inventory: { ...s.inventory, glitch_attack: 1 } })); const r = window.THE_GAME_DEV.sabotage.launchSabotage('glitch', 'TEAM-NOPE'); return { r, left: g.getState().inventory.glitch_attack }; });
   check('Sabotage needs a real rival and refunds nothing it did not spend', !noTarget.r.ok && noTarget.left === 1, JSON.stringify(noTarget));
   await page.locator('.topbar__wallet').click();
