@@ -92,7 +92,11 @@ export class Engine {
     this.updaters = new Set();
     this.time = 0;
     this.stats = { fps: 0, ms: 0, calls: 0, triangles: 0, pixelRatio: this.pixelRatio };
-    this._perf = { acc: 0, n: 0, slow: 0, fast: 0, cooldown: 0, ups: 0 };
+    this._perf = { acc: 0, n: 0, slow: 0, fast: 0, cooldown: 0, ups: 0, floor: 0 };
+    // THE GAME: per-tier scene cost (see perf/quality.ts); setSceneQuality() changes it
+    this.sceneQuality = { shadowScale: 1, shadowEvery: 1, pointShadows: true, dof: true };
+    this._frame = 0;
+    this._scenes = new Set();
     // THE GAME integration: GSAP stays on its own ticker. The desk, phone, pages and this
     // engine all share one GSAP, and this loop is stopped whenever the market is hidden;
     // driving GSAP from here would freeze every other animation in the app.
@@ -127,13 +131,41 @@ export class Engine {
       const list = [];
       scene.traverse((o) => { if (o.isLight && o.castShadow) list.push(o); });
       scene.userData.shadowLights = list;
+      for (const l of list) l.userData.authoredMapSize = l.shadow.mapSize.x;
+      this._scenes.add(scene);
+      this._applyShadowQuality(scene);
     }
     this.renderPass.scene = scene;
     this.bokeh.scene = scene;
   }
 
+  /**
+   * Graphics tier for every scene on this engine: shadow-map resolution, whether point
+   * lights cast (cube) shadows, how often moving shadows are re-rendered, and depth of field.
+   */
+  setSceneQuality(q) {
+    this.sceneQuality = { ...this.sceneQuality, ...q };
+    for (const sc of this._scenes) this._applyShadowQuality(sc);
+    if (!this.sceneQuality.dof) this.bokeh.enabled = false;
+  }
+
+  _applyShadowQuality(scene) {
+    const q = this.sceneQuality;
+    for (const l of scene.userData.shadowLights || []) {
+      const size = Math.max(256, Math.round((l.userData.authoredMapSize || 1024) * q.shadowScale));
+      const cast = l.isPointLight ? q.pointShadows : true;
+      if (l.shadow.mapSize.x !== size) {
+        l.shadow.mapSize.set(size, size);
+        l.shadow.map?.dispose(); l.shadow.map = null; // reallocated at the new size on the next shadow pass
+        l.shadow.needsUpdate = true;
+      }
+      l.castShadow = cast;
+    }
+    scene.userData.shadowsDirty = 2;
+  }
+
   setDepthOfField(enabled, focus, aperture) {
-    this.bokeh.enabled = enabled;
+    this.bokeh.enabled = enabled && this.sceneQuality.dof;
     if (focus !== undefined) this.bokeh.uniforms.focus.value = focus;
     if (aperture !== undefined) this.bokeh.uniforms.aperture.value = aperture;
   }
@@ -168,7 +200,10 @@ export class Engine {
         this.renderer.shadowMap.autoUpdate = false;
         if (sc.userData.shadowsDirty) { this.renderer.shadowMap.needsUpdate = true; sc.userData.shadowsDirty = Math.max(0, sc.userData.shadowsDirty - 1); }
       } else {
-        this.renderer.shadowMap.autoUpdate = true;
+        // moving shadows (dealer's hands, items) refresh every Nth frame on lower tiers
+        this._frame = (this._frame + 1) % 600;
+        this.renderer.shadowMap.autoUpdate = this._frame % (this.sceneQuality.shadowEvery || 1) === 0 || !!sc.userData.shadowsDirty;
+        if (sc.userData.shadowsDirty) sc.userData.shadowsDirty--;
       }
       // fully faded to black (or covered by the folders page): draw the black
       // frame once, then stop spending the GPU on a picture nobody can see
@@ -204,6 +239,10 @@ export class Engine {
     if (P.slow >= 2 && this.pixelRatio > this.minPixelRatio) {
       this.setPixelRatio(Math.max(this.minPixelRatio, this.pixelRatio - 0.25));
       P.slow = 0; P.cooldown = 3;
+    } else if (P.slow >= 3 && this.pixelRatio <= this.minPixelRatio) {
+      // already at the lowest resolution and still slow: ask for a cheaper graphics tier
+      P.slow = 0; P.cooldown = 4;
+      this.onSlow?.();
     } else if (P.fast >= 6 && this.pixelRatio < this.maxPixelRatio && P.ups < 2) {
       // only on high-refresh displays with lots of headroom, and never ping-pong
       this.setPixelRatio(Math.min(this.maxPixelRatio, this.pixelRatio + 0.25));

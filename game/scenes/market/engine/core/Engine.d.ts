@@ -1,6 +1,8 @@
 export class Engine {
   constructor(container: HTMLElement, opts?: { pixelRatioCap?: number; minPixelRatio?: number; adaptive?: boolean });
   fpsCap: number;
+  onSlow?: () => void;
+  setSceneQuality(q: { shadowScale?: number; shadowEvery?: number; pointShadows?: boolean; dof?: boolean }): void;
   pixelRatio: number;
   maxPixelRatio: number;
   stats: { fps: number; ms: number; calls: number; triangles: number; pixelRatio: number };

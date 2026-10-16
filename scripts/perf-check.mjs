@@ -37,7 +37,7 @@ const sample = (ms) => dev(async (ms) => {
 
 async function run() {
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--enable-precise-memory-info', '--js-flags=--expose-gc'] });
-  page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+  page = await (await browser.newContext({ viewport: { width: 1024, height: 640 } })).newPage();
   page.on('pageerror', (e) => out.errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|fonts\.g/.test(m.text())) out.errors.push(m.text()); });
   await page.goto(BASE + '/');
@@ -47,6 +47,8 @@ async function run() {
   await page.fill('input[name=password]', 'pass12'); await page.fill('input[name=confirm]', 'pass12');
   await page.getByRole('button', { name: 'Create Team' }).last().click();
   await page.waitForFunction(() => window.THE_GAME_DEV?.gsap, null, { timeout: 60000 });
+  // wall-clock timelines (software rendering runs at ~1-5 fps)
+  await dev(() => window.THE_GAME_DEV.gsap.ticker.lagSmoothing(0));
   await page.evaluate(() => document.querySelector('.tg-skip')?.click());
   await until(async () => (await st()).desk === 'DESK_IDLE', 240000, 'desk idle');
   await dev(() => { const d = window.THE_GAME_DEV; d.useGameStore.getState().earnCoins(5000, 'perf-coins'); d.marketState.activateBlackMarket(); });
@@ -63,6 +65,19 @@ async function run() {
     await until(async () => (await st()).market === 'MARKET_IDLE', 120000, 'market idle');
     cy.toIdleS = +((Date.now() - t0) / 1000).toFixed(1);
     cy.idle = await sample(6000);
+    if (c === 1) cy.heaviest = await dev(() => {
+      const e = window.THE_GAME_DEV.marketController.debugEngine, rows = [];
+      e.activeScene.traverse((o) => {
+        if (!o.isMesh || !o.visible) return;
+        let vis = true; for (let p = o; p; p = p.parent) if (!p.visible) vis = false;
+        if (!vis) return;
+        const g = o.geometry, tris = (g.index ? g.index.count : g.attributes.position.count) / 3 * (o.isInstancedMesh ? o.count : 1);
+        let n = o; const path = []; while (n && path.length < 3) { if (n.name) path.push(n.name); n = n.parent; }
+        rows.push([Math.round(tris), o.castShadow ? 'cast' : '', g.type, path.join('<') || o.parent?.type]);
+      });
+      rows.sort((a, b) => b[0] - a[0]);
+      return { meshes: rows.length, total: rows.reduce((n, r) => n + r[0], 0), top: rows.slice(0, 14).map((r) => r.join(' ')) };
+    });
     // real mouse click on an item: project its position to the screen
     const pt = await dev(() => {
       const d = window.THE_GAME_DEV, e = d.marketController.debugEngine, it = d.marketController.instance.desk.items.get('hint_drop');

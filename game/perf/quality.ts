@@ -22,12 +22,20 @@ export interface QualityProfile {
   dust: boolean;
   /** Frame cap for 3D scenes (0 = display rate). */
   fpsCap: number;
+  /** Market scenes: shadow-map size as a fraction of each light's authored size. */
+  sceneShadowScale: number;
+  /** Market scenes: re-render dynamic shadow maps every Nth frame. */
+  shadowEvery: number;
+  /** Market scenes: point lights (6 shadow renders each) may cast shadows. */
+  pointShadows: boolean;
+  /** Market scenes: depth of field while inspecting an item. */
+  sceneDof: boolean;
 }
 
 export const PROFILES: Record<Quality, QualityProfile> = {
-  low: { pixelRatio: 1, msaa: 0, shadowMap: 1024, dof: false, dust: false, fpsCap: 30 },
-  medium: { pixelRatio: 1.25, msaa: 2, shadowMap: 1024, dof: true, dust: true, fpsCap: 0 },
-  high: { pixelRatio: 2, msaa: 4, shadowMap: 2048, dof: true, dust: true, fpsCap: 0 },
+  low: { pixelRatio: 1, msaa: 0, shadowMap: 1024, dof: false, dust: false, fpsCap: 30, sceneShadowScale: 0.25, shadowEvery: 3, pointShadows: false, sceneDof: false },
+  medium: { pixelRatio: 1.25, msaa: 2, shadowMap: 1024, dof: true, dust: true, fpsCap: 0, sceneShadowScale: 0.5, shadowEvery: 2, pointShadows: true, sceneDof: false },
+  high: { pixelRatio: 2, msaa: 4, shadowMap: 2048, dof: true, dust: true, fpsCap: 0, sceneShadowScale: 0.5, shadowEvery: 1, pointShadows: true, sceneDof: true },
 };
 
 const KEY = 'the-game:quality';
@@ -69,6 +77,7 @@ interface QualityState {
   reportSlow(): void;
 }
 
+let lastStepDown = 0;
 const initialChoice = typeof window !== 'undefined' ? readChoice() : 'auto';
 
 export const useQuality = create<QualityState>()((set, get) => ({
@@ -81,6 +90,10 @@ export const useQuality = create<QualityState>()((set, get) => ({
   reportSlow() {
     const { choice, quality } = get();
     if (choice !== 'auto' || quality === 'low') return;
+    // one step at a time, never two within 20 s (no rapid switching); AUTO never steps back up
+    const now = Date.now();
+    if (now - lastStepDown < 20_000) return;
+    lastStepDown = now;
     set({ quality: quality === 'high' ? 'medium' : 'low' });
   },
 }));

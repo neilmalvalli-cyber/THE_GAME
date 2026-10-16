@@ -15,7 +15,7 @@ import { useGameStore } from '../../state/gameStore';
 import { useSceneStore, isMarketPurchasing } from '../../state/sceneStore';
 import { MARKET_ITEMS, NORMAL_MARKET_ITEMS } from '../../data/market';
 import { useMarketStore } from '../../services/marketState';
-import { profile, onQuality } from '../../perf/quality';
+import { profile, onQuality, useQuality } from '../../perf/quality';
 import { env } from '../../env';
 
 export type MarketKind = 'black' | 'store';
@@ -144,8 +144,12 @@ class MarketController {
       const q = profile();
       const engine = new mods.Engine(this.el, { pixelRatioCap: q.pixelRatio, minPixelRatio: q.pixelRatio <= 1 ? 0.75 : 0.85 });
       engine.fpsCap = q.fpsCap;
+      const sceneQuality = (p: typeof q) => ({ shadowScale: p.sceneShadowScale, shadowEvery: p.shadowEvery, pointShadows: p.pointShadows, dof: p.sceneDof });
+      engine.setSceneQuality(sceneQuality(q));
+      engine.onSlow = () => useQuality.getState().reportSlow();
       this.unsubs.push(onQuality((_t, p) => {
         engine.fpsCap = p.fpsCap;
+        engine.setSceneQuality(sceneQuality(p));
         engine.maxPixelRatio = Math.min(window.devicePixelRatio || 1, p.pixelRatio);
         engine.setPixelRatio(Math.min(engine.pixelRatio, engine.maxPixelRatio));
       }));
