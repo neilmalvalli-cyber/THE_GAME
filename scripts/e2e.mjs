@@ -6,7 +6,7 @@
 import { chromium } from 'playwright';
 
 const BASE = process.env.BASE_URL || 'http://localhost:3000';
-const ADMIN_PW = process.env.MOCK_ADMIN_PASSWORD || 'dev-admin-only'; // .env.development (mock)
+const ADMIN_PW = process.env.MOCK_ADMIN_PASSWORD || 'GameAdmin#2026!'; // .env.development (mock)
 const TEAM = `E2E ${Date.now().toString(36).slice(-5)}`;
 const results = [];
 let page, browser;

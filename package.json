@@ -12,7 +12,9 @@
     "test:landing": "node scripts/landing-check.mjs",
     "test:sql": "bash supabase/tests/run.sh",
     "seed": "node --no-warnings scripts/generate-seed.mjs",
-    "test:e2e:supabase": "node scripts/e2e-supabase.mjs"
+    "test:e2e:supabase": "node scripts/e2e-supabase.mjs",
+    "lab": "NEXT_PUBLIC_GAME_BACKEND=mock NEXT_PUBLIC_MOCK_ADMIN_PASSWORD=\"GameAdmin#2026!\" next build && next start",
+    "test:perf": "node scripts/perf-check.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

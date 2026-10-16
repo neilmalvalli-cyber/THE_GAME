@@ -151,11 +151,11 @@ async function serverUse(call: Promise<server.GameResult<unknown>>): Promise<Pow
   return v.ok ? { ok: true, caseSolved: !!v.caseSolved, message: String(v.message ?? 'Done.') } : { ok: false, message: String(v.message ?? FAIL) };
 }
 
-export const useSkipToken = (caseId: number, level: number) =>
+export const spendSkipToken = (caseId: number, level: number) =>
   isServerBackend ? serverUse(server.gameUseSkipToken({ caseId, level })) : Promise.resolve(useGameStore.getState().useSkipToken(caseId, level));
-export const useMasterKey = (caseId: number) =>
+export const spendMasterKey = (caseId: number) =>
   isServerBackend ? serverUse(server.gameUseMasterKey({ caseId })) : Promise.resolve(useGameStore.getState().useMasterKey(caseId));
-export const usePowerfulHint = (caseId: number, level: number) =>
+export const revealPowerfulHint = (caseId: number, level: number) =>
   isServerBackend ? serverUse(server.gameUsePowerfulHint({ caseId, level })) : Promise.resolve(useGameStore.getState().usePowerfulHint(caseId, level));
 export const armOverclock = () =>
   isServerBackend ? serverUse(server.gameArmOverclock()) : Promise.resolve(useGameStore.getState().armOverclock());

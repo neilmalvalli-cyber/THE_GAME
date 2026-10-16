@@ -20,7 +20,7 @@ import { buildMarketMail } from '../data/mail';
 import { deskController } from '../scenes/desk/deskController';
 import { marketController } from '../scenes/market/marketController';
 import { paths } from '../orchestration/routes';
-import { PerfPanel } from './PerfPanel';
+import { PerfPanel } from '../perf/PerfPanel';
 import * as catalog from '../data/market';
 import { useQuality, type QualityChoice } from '../perf/quality';
 import './dev.css';

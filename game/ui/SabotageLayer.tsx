@@ -6,7 +6,7 @@ import { useGameStore } from '../state/gameStore';
 export function SabotageLayer() {
   const glitchUntil = useGameStore((s) => s.effects.glitchUntil);
   const freezeUntil = useGameStore((s) => s.effects.freezeUntil);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const active = glitchUntil > now || freezeUntil > now;
   useEffect(() => {
     if (!(glitchUntil > Date.now() || freezeUntil > Date.now())) return;

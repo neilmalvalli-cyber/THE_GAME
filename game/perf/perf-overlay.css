@@ -1,0 +1,8 @@
+.perf-overlay { position: fixed; left: 12px; bottom: 12px; z-index: 95; width: 300px; padding: 10px 12px; border-radius: 6px;
+  background: rgba(10, 9, 9, .88); border: 1px solid rgba(226, 183, 122, .25); font: 11px/1.5 'IBM Plex Mono', monospace; color: #d8d0c4; pointer-events: auto; }
+.perf-overlay .dev__stat { display: flex; justify-content: space-between; gap: 8px; }
+.perf-overlay .dev__stat span { color: #8f877a; }
+.perf-overlay .dev__stat code { color: #e2b77a; text-align: right; }
+.perf-overlay__tiers { display: flex; gap: 4px; margin-top: 8px; }
+.perf-overlay__tiers button { flex: 1; padding: 3px 0; font: inherit; text-transform: uppercase; background: transparent; color: #d8d0c4; border: 1px solid rgba(255,255,255,.2); border-radius: 3px; cursor: pointer; }
+.perf-overlay__tiers button.is-on { background: #e2b77a; color: #111; border-color: #e2b77a; }

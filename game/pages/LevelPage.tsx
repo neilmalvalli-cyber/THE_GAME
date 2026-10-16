@@ -12,7 +12,7 @@ import { scheduleFirstSolveDeadDrop } from '../services/intelFeed';
 import { IconArrowLeft } from '../ui/icons';
 import { useLeave } from '../lib/useLeave';
 import './level.css';
-import { submitAnswer, usePowerfulHint, useSkipToken } from '../services/backend';
+import { submitAnswer, revealPowerfulHint, spendSkipToken } from '../services/backend';
 
 type Feedback = { kind: 'error' | 'success' | 'info'; text: string } | null;
 
@@ -85,13 +85,13 @@ export function LevelPage() {
     if (r.caseSolved) window.setTimeout(() => setSolvedCase(getCaseFragment(caseId)), 1100);
   };
 
-  const useHint = async () => {
-    const r = await usePowerfulHint(caseId, level);
+  const onHint = async () => {
+    const r = await revealPowerfulHint(caseId, level);
     if (!r.ok) setFeedback({ kind: 'error', text: r.message });
   };
-  const useSkip = async () => {
+  const onSkip = async () => {
     setConfirmSkip(false);
-    const r = await useSkipToken(caseId, level);
+    const r = await spendSkipToken(caseId, level);
     setFeedback({ kind: r.ok ? 'info' : 'error', text: r.message });
     if (r.ok && r.caseSolved) window.setTimeout(() => setSolvedCase(getCaseFragment(caseId)), 400);
   };
@@ -137,11 +137,11 @@ export function LevelPage() {
             {hintShown ? (
               <p className="powerups__hint" data-testid="powerful-hint"><b>Powerful Hint · </b>{hintText ?? GENERIC_HINT}</p>
             ) : hintsOwned > 0 && (
-              <button type="button" className="btn btn--ghost" onClick={useHint}>Use Powerful Hint ({hintsOwned})</button>
+              <button type="button" className="btn btn--ghost" onClick={onHint}>Use Powerful Hint ({hintsOwned})</button>
             )}
             {!skippedAt && skipsOwned > 0 && (confirmSkip ? (
               <span className="powerups__confirm">Skip this level? No solve points are awarded.
-                <button type="button" className="btn btn--primary" onClick={useSkip}>Confirm skip</button>
+                <button type="button" className="btn btn--primary" onClick={onSkip}>Confirm skip</button>
                 <button type="button" className="btn btn--ghost" onClick={() => setConfirmSkip(false)}>Cancel</button>
               </span>
             ) : (

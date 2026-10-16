@@ -18,6 +18,7 @@ import { connectAdminMail } from '../services/mail';
 import { connectSabotage } from '../services/sabotage';
 import { connectTeamSync, isServerBackend } from '../services/backend';
 import { SabotageLayer } from '../ui/SabotageLayer';
+import { PerfOverlay } from '../perf/PerfOverlay';
 import './team.css';
 import { env } from '../env';
 
@@ -66,6 +67,7 @@ function TeamShell() {
       <WalletOverlay />
       <MailNotifier />
       <SabotageLayer />
+      <PerfOverlay />
       {DevPanel && <Suspense fallback={null}><DevPanel /></Suspense>}
     </div>
   );

@@ -6,7 +6,7 @@ import { CATALOG } from '../data/market';
 import { CASES, pad2 } from '../data/cases';
 import { isCaseSolved } from '../services/scoring';
 import { launchSabotage, listRivals, type SabotageKind } from '../services/sabotage';
-import { armOverclock, isServerBackend, launchSabotageRemote, useMasterKey, useRivals } from '../services/backend';
+import { armOverclock, isServerBackend, launchSabotageRemote, spendMasterKey, useRivals } from '../services/backend';
 
 export function PowerUps() {
   const inventory = useGameStore((s) => s.inventory);
@@ -56,7 +56,7 @@ export function PowerUps() {
                   <option value="">Choose a case…</option>
                   {open.map((k) => <option key={k.id} value={k.id}>Case {pad2(k.id)} — {k.title}</option>)}
                 </select>
-                <button type="button" className="btn btn--ghost" disabled={!caseId || busy} onClick={() => { void run(useMasterKey(Number(caseId))); setCaseId(''); }}>Unlock case</button>
+                <button type="button" className="btn btn--ghost" disabled={!caseId || busy} onClick={() => { void run(spendMasterKey(Number(caseId))); setCaseId(''); }}>Unlock case</button>
               </span>
             ))}
           </li>

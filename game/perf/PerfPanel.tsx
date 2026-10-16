@@ -1,9 +1,9 @@
-// Development-only performance read-out (never shipped: lives behind the DEV panel).
+// Performance read-out: in the DEV panel, and in production behind ?perf=1 (PerfOverlay).
 import { useEffect, useState } from 'react';
 import { deskController } from '../scenes/desk/deskController';
 import { marketController } from '../scenes/market/marketController';
 import { useSceneStore } from '../state/sceneStore';
-import { useQuality } from '../perf/quality';
+import { useQuality } from './quality';
 
 interface Row { fps: number; ms: number; calls: number; tris: number; pr: number }
 

@@ -62,7 +62,10 @@ export function guessQuality(): Quality {
   const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
   const cores = navigator.hardwareConcurrency ?? 4;
   if (mem <= 4 || cores <= 2) return 'low';
-  const integrated = /intel|uhd|hd graphics|iris|mali|adreno|powervr|apple gpu/.test(g) && !/arc/.test(g);
+  // AMD APUs (e.g. Ryzen 5 8600G → "Radeon 760M Graphics", "Radeon(TM) Graphics", Vega) share system
+  // memory: treat them as integrated (MEDIUM), not as a graphics card (HIGH)
+  const amdIntegrated = /radeon(\(tm\))?\s*(graphics|vega|\d{3}m\b)/.test(g);
+  const integrated = (/intel|uhd|hd graphics|iris|mali|adreno|powervr|apple gpu/.test(g) && !/arc/.test(g)) || amdIntegrated;
   const bigScreen = window.screen.width * (window.devicePixelRatio || 1) > 2600;
   if (integrated) return bigScreen ? 'low' : 'medium';
   return /nvidia|geforce|rtx|radeon|amd/.test(g) ? 'high' : 'medium';
