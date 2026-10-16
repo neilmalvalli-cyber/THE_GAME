@@ -88,3 +88,6 @@ BEGIN
     EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO service_role', f);
   END LOOP;
 END $$;
+
+-- tell the Supabase API (PostgREST) about the new functions right away
+NOTIFY pgrst, 'reload schema';
