@@ -12,7 +12,7 @@ let page;
 const dev = (fn, a) => page.evaluate(fn, a);
 const until = async (pred, ms, label) => {
   const t0 = Date.now();
-  for (;;) { try { if (await pred()) return; } catch { /* navigating */ } if (Date.now() - t0 > ms) throw new Error('timeout: ' + label); await page.waitForTimeout(250); }
+  for (;;) { try { if (await pred()) return; } catch { /* navigating */ } if (Date.now() - t0 > ms) throw new Error('timeout: ' + label + ' state=' + JSON.stringify(await st().catch(() => null)) + ' inspected=' + (await dev(() => window.THE_GAME_DEV.marketController.instance?.inspected?.id).catch(() => '?'))); await page.waitForTimeout(250); }
 };
 const st = () => dev(() => { const s = window.THE_GAME_DEV.useSceneStore.getState(); return { desk: s.deskState, market: s.marketState }; });
 
