@@ -139,8 +139,8 @@ async function run() {
     // ------------------------------------------------------------ markets (server rules)
     // start from a known market state (an earlier run may have left the Black Market on)
     await adm.getByRole('button', { name: 'Market Operations' }).click();
-    if (await adm.getByRole('button', { name: 'Deactivate Black Market' }).count()) {
-      await adm.getByRole('button', { name: 'Deactivate Black Market' }).click();
+    if (await adm.getByRole('button', { name: 'Deactivate Black Market', exact: true }).count()) {
+      await adm.getByRole('button', { name: 'Deactivate Black Market', exact: true }).click();
       await adm.getByRole('button', { name: 'Confirm deactivation' }).click();
     }
     if (await adm.getByRole('button', { name: 'Reopen market' }).count()) await adm.getByRole('button', { name: 'Reopen market' }).click();
@@ -150,7 +150,7 @@ async function run() {
     const closed = await buy(a, 'firewall', 'black', 'bm-early');
     check('Black Market purchase refused while locked', !closed.ok && closed.reason === 'market-closed', closed.message);
     await adm.getByRole('button', { name: 'Market Operations' }).click();
-    await adm.getByRole('button', { name: 'Activate Black Market' }).click();
+    await adm.getByRole('button', { name: 'Activate Black Market', exact: true }).click();
     await adm.getByRole('button', { name: 'Confirm activation' }).click();
     await until(adm, async () => (await adm.getByTestId('black-status').innerText()).toLowerCase().includes('active'), 15000, 'BM active');
     await until(a, async () => (await a.locator('.topbar__item', { hasText: 'Black Market' }).count()) === 1, 15000, 'team sees BM');

@@ -55,8 +55,8 @@ async function run() {
     await adm.getByRole('button', { name: 'Market Operations' }).click({ timeout: 60000 });
     await adm.getByTestId('minigame-ops').waitFor({ timeout: 30000 });
     await adm.waitForTimeout(6000); // the dashboard pulls the real market state every 4 s
-    if (await adm.getByRole('button', { name: 'Activate Black Market' }).count()) {
-      await adm.getByRole('button', { name: 'Activate Black Market' }).click();
+    if (await adm.getByRole('button', { name: 'Activate Black Market', exact: true }).count()) {
+      await adm.getByRole('button', { name: 'Activate Black Market', exact: true }).click();
       await adm.getByRole('button', { name: 'Confirm activation' }).click();
     }
     if (await adm.getByRole('button', { name: 'End mini-game' }).count()) await adm.getByRole('button', { name: 'End mini-game' }).click();
@@ -153,7 +153,7 @@ async function run() {
     await closeWallet(a);
 
     // admin: put the Black Market back
-    await adm.getByRole('button', { name: 'Deactivate Black Market' }).click();
+    await adm.getByRole('button', { name: 'Deactivate Black Market', exact: true }).click();
     await adm.getByRole('button', { name: 'Confirm deactivation' }).click();
     const relevant = errors.filter((e) => !/fonts\.g|Failed to load resource|ERR_|net::|WebGL|GPU|swiftshader/i.test(e));
     check('No console / page errors', relevant.length === 0, relevant.slice(0, 3).join(' || '));
