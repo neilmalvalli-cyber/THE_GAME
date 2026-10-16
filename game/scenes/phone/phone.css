@@ -201,6 +201,7 @@
 .os-app { position: absolute; top: 34px; left: 0; right: 0; bottom: 34px; overflow: hidden; transform-origin: 50% 40%; }
 .os-nav { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; background: rgba(18,18,20,.96); border-top: .5px solid rgba(255,255,255,.12); z-index: 5; }
 .os-nav button { height: 34px; border: 0; background: none; color: #fff; font: 400 24px/1 Figtree, system-ui, sans-serif; cursor: pointer; }
+.os-nav button:disabled { opacity: .25; cursor: default; }
 .os-nav__title { text-align: center; font: 600 11px/1 Figtree, system-ui, sans-serif; letter-spacing: .08em; color: rgba(235,235,245,.6); }
 .os-nav__home span { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; }
 .os-dim { position: absolute; inset: 0; background: #000; pointer-events: none; z-index: 6; }

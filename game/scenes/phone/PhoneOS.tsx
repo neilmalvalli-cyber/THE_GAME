@@ -1,6 +1,7 @@
 // The unlocked evidence phone: a small, original phone OS (home screen + apps), drawn as
 // DOM inside the one phone model — no extra 3D, nothing re-rendered but the screen.
-// Navigation: every app has Back and Home; Escape goes back one step.
+// Navigation: every app has Back and Home (both stay inside the phone); Escape goes back
+// one step, and from the home screen leaves the phone.
 import type React from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
@@ -45,10 +46,12 @@ export function PhoneOS({ onExit }: { onExit(): void }) {
   const tick = () => { if (sounds) playKeyTick(); };
   const go = (r: Route) => { tick(); setRoute(r); };
   const home = () => go({ app: 'home' });
-  const back = () => {
+  // the on-screen Back works inside the phone only; leaving the phone is the desk's
+  // "Back to Desk" button (or Escape on the home screen)
+  const back = (fromKey = false) => {
     const r = route;
+    if (r.app === 'home') { if (fromKey) { tick(); onExit(); } return; }
     tick();
-    if (r.app === 'home') { onExit(); return; }
     if (r.app === 'phone' && (r.callId || r.contactId)) { setRoute({ ...r, callId: null, contactId: null }); return; }
     if (r.app === 'messages' && r.thread) { setRoute({ app: 'messages' }); return; }
     if (r.app === 'contacts' && r.contactId) { setRoute({ app: 'contacts' }); return; }
@@ -66,7 +69,7 @@ export function PhoneOS({ onExit }: { onExit(): void }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || (e.target as Element)?.closest?.('input,textarea,select')) return;
       e.preventDefault();
-      backRef.current();
+      backRef.current(true);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -108,7 +111,7 @@ export function PhoneOS({ onExit }: { onExit(): void }) {
         {route.app === 'settings' && <Settings brightness={brightness} setBrightness={setBrightness} sounds={sounds} setSounds={setSounds} />}
       </div>
       <nav className="os-nav" aria-label="Phone navigation">
-        <button type="button" onClick={back} aria-label="Back">‹</button>
+        <button type="button" onClick={() => back()} aria-label="Back" disabled={route.app === 'home'}>‹</button>
         <span className="os-nav__title">{title}</span>
         <button type="button" onClick={home} aria-label="Home" className="os-nav__home"><span /></button>
       </nav>
