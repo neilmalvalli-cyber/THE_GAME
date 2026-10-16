@@ -3,6 +3,55 @@ title: "THE GAME — Adding Cases 2 to 5"
 subtitle: "Implementation guide for a coding agent (Codex)"
 ---
 
+# 0. Starting from a new session (read first)
+
+You have no memory of earlier work. Everything you need is in this guide and the repository.
+
+**Project in one paragraph.** THE GAME is a 3D investigation game for a live campus event. Teams sit at a 3D desk with six case folders. Each case has 4–5 levels (puzzles), and solving a level pays score and coins. Teams spend coins on power-ups in a Normal Market and a Black Market. Solving a whole case pays digits of a code that unlocks an evidence phone. It is a **Next.js 16 + React 19 + TypeScript** app, with three.js for the 3D scenes. The game client is in `game/`, mounted by `app/[[...slug]]`. Server actions in `actions/game.ts` talk to **Supabase** (Postgres), where answers are checked by SQL functions (`supabase/migrations/004–006`).
+
+**Two modes**, set by `NEXT_PUBLIC_GAME_BACKEND`:
+
+| Mode | Where it runs | How answers are handled |
+|---|---|---|
+| `mock` | Everything in the browser; no database needed | Answers are read from `secrets.ts`. Not secure; for development only. |
+| `supabase` | The real event | `secrets.ts` is replaced by an empty stub at build time. Answers live only in the database. |
+
+`.env.development` already selects `mock`, so you can run and test without any keys.
+
+**Setup:**
+
+```bash
+git clone https://github.com/neilmalvalli-cyber/THE_GAME.git && cd THE_GAME   # branch main
+npm install            # Node 20+ (developed on Node 22)
+npm run dev            # mock mode on http://localhost:3000
+```
+
+Then:
+
+1. Click **Team Login → Create Team** with any name and password.
+2. Skip the intro.
+3. Open a folder on the desk.
+
+For the admin view (mock mode only), use **Admin Login** with the password from `.env.development`.
+
+**What you will NOT have, and must not ask for or invent:**
+
+- Supabase keys or the database password. The organizers run the seed SQL themselves (section 6).
+- Real evidence files that are not in the brief.
+
+**Read before editing:**
+
+- `game/data/cases.ts`: all of Case 1. It is the reference.
+- The top comment of `game/data/secrets.ts`.
+
+**Next.js note:** this Next.js version differs from older ones (see `AGENTS.md`). You should not need to touch any Next.js code to add cases.
+
+**Testing in a container without a browser or Postgres:**
+
+- `npx tsc --noEmit` and `npm run seed` always work.
+- `npm run test:e2e` needs Playwright with Chromium (`npx playwright install chromium` if it is missing) and the dev server running.
+- `npm run test:sql` needs a local PostgreSQL 15+ (`PGHOST`, `PGPORT`, `PGUSER`; it creates its own `thegame_test` database). If Postgres is unavailable, say so in the report. Do not skip silently.
+
 # 1. What this document is
 
 This guide is for a coding agent working in the **THE_GAME** repository (`https://github.com/neilmalvalli-cyber/THE_GAME`, branch `main`). It explains how to add four new investigation cases to the game. **Case 1 ("The Fractured Truth") is already finished. Use it as the reference implementation.**
