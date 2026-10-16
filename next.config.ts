@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   turbopack: {
     rules: {
-      "app/globals.css": {
+      "*.css": {
         loaders: ["@tailwindcss/turbopack"],
         as: "*.css",
       },
