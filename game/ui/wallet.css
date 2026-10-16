@@ -1,0 +1,58 @@
+.wallet {
+  position: fixed; z-index: 35; top: calc(var(--topbar-h) + 10px); right: max(16px, env(safe-area-inset-right));
+  width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - var(--topbar-h) - 32px); overflow: auto;
+  padding: 18px 18px 14px; border-radius: 6px; color: var(--text); outline: none;
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(194,163,104,.10), transparent 60%),
+    repeating-linear-gradient(115deg, rgba(255,255,255,.012) 0 2px, transparent 2px 5px),
+    linear-gradient(180deg, #1d1a17, #141210);
+  border: 1px solid rgba(194,163,104,.28);
+  box-shadow: 0 24px 60px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.04) inset;
+  transform-origin: top right;
+  opacity: 0; transform: translateY(-6px) scale(.97);
+  transition: opacity .2s ease, transform .22s var(--ease-out);
+}
+.wallet.is-open { opacity: 1; transform: none; }
+.wallet__stitch { position: absolute; inset: 6px; border: 1px dashed rgba(194,163,104,.22); border-radius: 4px; pointer-events: none; }
+.wallet__head { display: flex; align-items: flex-start; justify-content: space-between; position: relative; }
+.wallet__team { font: 600 15px/1.2 var(--font-display); letter-spacing: .3em; color: var(--ivory); }
+.wallet__teamid { font: 400 10.5px/1.6 var(--font-mono); color: var(--muted); }
+.wallet__close { display: inline-flex; padding: 6px; margin: -6px -6px 0 0; color: var(--muted); background: none; border: 0; border-radius: 3px; cursor: pointer; }
+.wallet__close:hover { color: var(--text); background: rgba(255,255,255,.06); }
+.wallet__balance { position: relative; margin: 16px 0 14px; padding: 14px 14px 12px; border-radius: 4px; background: rgba(0,0,0,.28); border: 1px solid rgba(194,163,104,.18); }
+.wallet__label { font: 500 10px/1 var(--font-ui); letter-spacing: .26em; text-transform: uppercase; color: var(--gold-dim); }
+.wallet__label--rule { position: relative; padding-bottom: 8px; border-bottom: 1px solid rgba(194,163,104,.16); }
+.wallet__amount { display: flex; align-items: center; gap: 10px; margin-top: 10px; font: 500 30px/1 var(--font-mono); color: var(--gold); font-variant-numeric: tabular-nums; }
+.wallet__amount .coin__dot { width: 14px; height: 14px; }
+.wallet__unit { font: 500 11px/1 var(--font-ui); letter-spacing: .24em; text-transform: uppercase; color: var(--gold-dim); align-self: flex-end; padding-bottom: 4px; }
+.wallet__list { position: relative; list-style: none; margin: 0; padding: 0; }
+.wallet__row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.wallet__desc { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: var(--text); }
+.wallet__desc time { font: 400 10.5px/1 var(--font-mono); color: var(--muted); }
+.wallet__delta { font: 500 13px/1 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.wallet__delta--earn { color: #b9c98b; }
+.wallet__delta--spend { color: #e0837b; }
+.wallet__row--opening { border-bottom: 0; opacity: .7; }
+.wallet__empty { padding: 12px 0; color: var(--muted); font-size: 12.5px; }
+.wallet__more { margin-top: 6px; font-size: 11px; color: var(--muted); }
+
+/* power-ups */
+.powerbox__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.powerbox__item { display: grid; gap: 4px; }
+.powerbox__name b { font-weight: 600; opacity: 0.7; }
+.powerbox__state { font-size: 12px; opacity: 0.7; }
+.powerbox__row { display: flex; gap: 6px; }
+.powerbox__row select { flex: 1; min-width: 0; font: inherit; font-size: 12px; padding: 4px; background: rgba(0,0,0,0.25); color: inherit; border: 1px solid rgba(255,255,255,0.2); }
+.powerbox__note { font-size: 12px; margin: 8px 0 0; }
+.powerbox__note.is-error { color: #e07a6a; }
+.wallet .btn { padding: 4px 10px; font-size: 12px; }
+
+/* incoming sabotage: visual only, never intercepts input */
+.glitch-fx { position: fixed; inset: 0; z-index: 90; pointer-events: none; mix-blend-mode: screen;
+  background: repeating-linear-gradient(0deg, rgba(255,0,80,0.07) 0 2px, transparent 2px 5px);
+  animation: glitch-shift 0.9s steps(4) infinite; }
+@keyframes glitch-shift { 0% { transform: translate(0,0); } 25% { transform: translate(-6px,2px); } 50% { transform: translate(4px,-3px); } 75% { transform: translate(-2px,4px); } 100% { transform: translate(0,0); } }
+html.is-glitched .desk-caption, html.is-glitched .wallet__label--rule ~ .wallet__more { visibility: hidden; }
+html.is-glitched .team { filter: hue-rotate(40deg) contrast(1.15); }
+.freeze-banner { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 91; pointer-events: none;
+  padding: 8px 16px; background: rgba(40, 90, 140, 0.92); color: #eaf4ff; font: 600 12px/1.2 'IBM Plex Mono', monospace; letter-spacing: 0.08em; border-radius: 3px; }
