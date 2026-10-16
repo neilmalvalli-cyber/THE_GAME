@@ -86,6 +86,8 @@ class MarketController {
   get instance() { return this.black; }
   get storeInstance() { return this.store; }
   /** Diagnostics (dev panel): the shared market renderer, if built. */
+  /** Development / profiling only. */
+  get debugEngine() { return this.engine; }
   get engineStats() { return this.engine ? { ...this.engine.stats, running: this.running } : null; }
   sceneOf(kind: MarketKind): AnyScene | null { return kind === 'black' ? this.black : this.store; }
 
