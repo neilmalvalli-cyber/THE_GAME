@@ -67,7 +67,7 @@
 
 .ev-cam { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .ev-fit { position: relative; perspective: 1500px; perspective-origin: 50% 30%; pointer-events: auto; }
-.ev-rig { position: relative; transform-style: preserve-3d; transform-origin: 50% 60%; will-change: transform; }
+.ev-rig { position: relative; transform-style: flat; /* flat: 3D depth-sorting broke clicks on the lower keypad */ transform-origin: 50% 60%; will-change: transform; }
 .ev-phone { position: absolute; inset: 0; }
 .ev-shadow { position: absolute; inset: 0; border-radius: 44px; background: rgba(0,0,0,.85); filter: blur(14px); transform: translate(14px, 22px); opacity: .8; }
 

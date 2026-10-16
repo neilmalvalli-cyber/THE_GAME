@@ -8,6 +8,7 @@ import { PowerUps } from './PowerUps';
 import { formatTime } from '../lib/time';
 import { playPaper } from '../audio/uiAudio';
 import './wallet.css';
+import { teamTag } from '../lib/teamId';
 
 export function WalletOverlay() {
   const open = useUiStore((s) => s.walletOpen);
@@ -47,7 +48,7 @@ export function WalletOverlay() {
       <header className="wallet__head">
         <div>
           <div className="wallet__team">{team.name}</div>
-          <div className="wallet__teamid">{team.id}</div>
+          <div className="wallet__teamid">{teamTag(team.id)}</div>
         </div>
         <button type="button" className="wallet__close" onClick={() => { playPaper(); setOpen(false); }} aria-label="Close wallet"><IconClose /></button>
       </header>

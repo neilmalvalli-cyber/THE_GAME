@@ -576,12 +576,11 @@ async function run() {
 
   // ---------------------------------------------------------------- 24 levels, a solved case, fragments
   const lv = await page.evaluate(async () => {
-    const cases = await import('/src/data/cases.ts');
-    const routes = await import('/src/orchestration/routes.ts');
+    const { cases, routes, secrets } = window.THE_GAME_DEV;
     let ok = 0;
     for (const c of cases.CASES) for (const l of c.levels) { const r = routes.parseTeamRoute(`/team/case/${c.id}/level/${l.number}`); if (r.kind === 'level') ok++; }
     const frags = cases.CASES.map((c) => cases.caseFragmentLength(c.id));
-    return { cases: cases.CASES.length, levels: cases.CASES.map((c) => c.levels.length), ok, frags, answers: cases.CASES.find((c) => c.id === 6).levels.map((l) => l.answer) };
+    return { cases: cases.CASES.length, levels: cases.CASES.map((c) => c.levels.length), ok, frags, answers: cases.CASES.find((c) => c.id === 6).levels.map((l) => secrets.ANSWERS[`6-${l.number}`]) };
   });
   check('Six cases × four levels, all 24 level routes resolve', lv.cases === 6 && lv.levels.every((n) => n === 4) && lv.ok === 24, `${lv.ok} routes`);
   check('Fragment lengths 3 × 1 + 3 × 2 = 9 digits', lv.frags.filter((n) => n === 1).length === 3 && lv.frags.filter((n) => n === 2).length === 3 && lv.frags.reduce((a, b) => a + b, 0) === 9, lv.frags.join(','));

@@ -40,9 +40,15 @@ async function openPage(browser) {
   return page;
 }
 
-async function register(page, name) {
+// the role screen builds the 3D desk in idle time: let it finish before typing (software GL is slow)
+async function openLogin(page, which = 'Team Login') {
   await page.goto(BASE + '/');
-  await page.getByText('Team Login').click();
+  await page.waitForSelector('.scene-layer--desk[data-phase="ready"]', { state: 'attached', timeout: 120000 });
+  await page.getByText(which).click();
+}
+
+async function register(page, name) {
+  await openLogin(page);
   await page.fill('input[name=team]', name);
   await page.fill('input[name=password]', PW);
   await page.fill('input[name=confirm]', PW);
@@ -64,8 +70,7 @@ async function run() {
     check('Starting balance comes from the server (100 coins)', (await state(a)).balance === 100);
 
     const dup = await openPage(browser);
-    await dup.goto(BASE + '/');
-    await dup.getByText('Team Login').click();
+    await openLogin(dup);
     await dup.fill('input[name=team]', TEAM_A.toUpperCase());
     await dup.fill('input[name=password]', PW);
     await dup.fill('input[name=confirm]', PW);
@@ -96,8 +101,7 @@ async function run() {
 
     // ------------------------------------------------------------ another device, same team
     const a2 = await openPage(browser);
-    await a2.goto(BASE + '/');
-    await a2.getByText('Team Login').click();
+    await openLogin(a2);
     await a2.getByRole('tab', { name: 'Login to Existing Team' }).click();
     await a2.fill('input[name=team]', TEAM_A.toLowerCase());
     await a2.fill('input[name=password]', 'wrong-password');
@@ -114,8 +118,7 @@ async function run() {
 
     // ------------------------------------------------------------ admin
     const adm = await openPage(browser);
-    await adm.goto(BASE + '/');
-    await adm.getByText('Admin Login').click();
+    await openLogin(adm, 'Admin Login');
     await adm.fill('input[name=admin-email]', ADMIN_EMAIL);
     await adm.fill('input[name=admin-password]', 'wrong');
     await adm.getByRole('button', { name: 'Login', exact: true }).click();

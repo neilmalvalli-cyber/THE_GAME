@@ -11,6 +11,7 @@ import { useSceneStore, isCinematicBusy } from '../state/sceneStore';
 import { parseTeamRoute, paths } from '../orchestration/routes';
 import { playPaper, unlockUiAudio } from '../audio/uiAudio';
 import './topbar.css';
+import { teamTag } from '../lib/teamId';
 
 export function TopBar() {
   const navigate = useNavigate();
@@ -116,7 +117,7 @@ export function TopBar() {
           <IconExit />
         </button>
 
-        <span className="topbar__team" title={team.id}><span className="topbar__teamname">{team.name}</span><span className="topbar__teamid">{team.id}</span></span>
+        <span className="topbar__team" title={team.id}><span className="topbar__teamname">{team.name}</span><span className="topbar__teamid">{teamTag(team.id)}</span></span>
       </nav>
       {leaving && <LogoutDialog onCancel={() => setLeaving(false)} />}
     </header>

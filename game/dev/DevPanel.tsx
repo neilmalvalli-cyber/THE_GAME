@@ -2,6 +2,9 @@
 // so it never ships in production builds. Toggle with the ` key.
 import * as backend from '../services/backend';
 import * as sabotage from '../services/sabotage';
+import * as casesData from '../data/cases';
+import * as routes from '../orchestration/routes';
+import * as secrets from '@/game/data/secrets';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
@@ -44,7 +47,7 @@ export default function DevPanel() {
 
   useEffect(() => {
     window.simulateIncomingMail = simulateIncomingMail;
-    window.THE_GAME_DEV = { catalog, useQuality, deskController, marketController, wallet, useGameStore, useSceneStore, useUiStore, gsap, marketState, processMarketEvents, sabotage, backend };
+    window.THE_GAME_DEV = { catalog, useQuality, deskController, marketController, wallet, useGameStore, useSceneStore, useUiStore, gsap, marketState, processMarketEvents, sabotage, backend, cases: casesData, routes, secrets };
     const onKey = (e: KeyboardEvent) => { if (e.key === '`' && !(e.target as Element)?.closest?.('input,textarea')) setOpen((o) => !o); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
