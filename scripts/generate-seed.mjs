@@ -56,7 +56,7 @@ BEGIN
   SELECT id INTO v_event FROM events WHERE name = 'THE GAME' ORDER BY created_at DESC LIMIT 1;
   IF v_event IS NULL THEN
     INSERT INTO events (name, description, status, starting_coins, market_open, settings)
-    VALUES ('THE GAME', 'Six case files, two markets and a locked phone.', 'live', ${Number(STARTING_COINS)}, true, '{"black_market_active": false}')
+    VALUES ('THE GAME', 'Seven case files, two markets and a locked phone.', 'live', ${Number(STARTING_COINS)}, true, '{"black_market_active": false}')
     RETURNING id INTO v_event;
   ELSE
     UPDATE events SET starting_coins = ${Number(STARTING_COINS)} WHERE id = v_event;

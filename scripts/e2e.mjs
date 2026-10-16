@@ -135,8 +135,9 @@ async function run() {
   await until(async () => (await scene()).desk === 'DESK_IDLE', 120000, 'folders landed');
   const log1 = await deskLog();
   const folders = await dev(() => window.THE_GAME_DEV.deskController.instance.folders.map((f) => ({ id: f.id, phase: f.phase })));
-  check('Six case folders on the desk, all IDLE after landing', folders.length === 6 && folders.every((f) => f.phase === 'IDLE'), folders.map((f) => `${f.id}:${f.phase}`).join(' '));
-  check('Desk reveal → six folders land → idle', log1.includes('FOLDERS_DROPPING') && log1.at(-1) === 'DESK_IDLE', log1.join(' > '));
+  const caseCount = await dev(() => window.THE_GAME_DEV.cases.CASES.length);
+  check(`One folder per case (${caseCount}) on the desk, all IDLE after landing`, folders.length === caseCount && folders.every((f) => f.phase === 'IDLE'), folders.map((f) => `${f.id}:${f.phase}`).join(' '));
+  check('Desk reveal → folders land → idle', log1.includes('FOLDERS_DROPPING') && log1.at(-1) === 'DESK_IDLE', log1.join(' > '));
   check('Session marks intro + landing complete', (await game()).session.introCompleted && (await game()).session.deskLanded);
 
   // ---------------------------------------------------------------- case + levels
@@ -582,18 +583,21 @@ async function run() {
     const frags = cases.CASES.map((c) => cases.caseFragmentLength(c.id));
     return { cases: cases.CASES.length, levels: cases.CASES.map((c) => c.levels.length), ok, frags, answers: cases.CASES.find((c) => c.id === 6).levels.map((l) => secrets.ANSWERS[`6-${l.number}`]) };
   });
-  check('Six cases (Case 1 has five levels, the rest four), all 25 level routes resolve', lv.cases === 6 && lv.levels.join() === '5,4,4,4,4,4' && lv.ok === 25, `${lv.ok} routes`);
-  check('Fragment lengths 3 × 1 + 3 × 2 = 9 digits', lv.frags.filter((n) => n === 1).length === 3 && lv.frags.filter((n) => n === 2).length === 3 && lv.frags.reduce((a, b) => a + b, 0) === 9, lv.frags.join(','));
+  const totalLevels = lv.levels.reduce((a, b) => a + b, 0);
+  check(`${lv.cases} cases (levels ${lv.levels.join(',')}), every level route resolves`, lv.cases === 7 && lv.levels.every((n) => n >= 1) && lv.ok === totalLevels, `${lv.ok}/${totalLevels} routes`);
+  check('Every case pays a fragment; the fragments add up to the 9-digit phone code', lv.frags.every((n) => n >= 1) && lv.frags.reduce((a, b) => a + b, 0) === 9, lv.frags.join(','));
   const solve = await dev((answers) => {
     const g = window.THE_GAME_DEV.useGameStore.getState();
     const before = g.wallet.balance;
     const rs = answers.map((a, i) => g.submitAnswer(6, i + 1, a));
-    const again = g.submitAnswer(6, 4, answers[3]);
-    return { solvedOnLast: rs[3].caseSolved, earlier: rs.slice(0, 3).some((r) => r.caseSolved), again, gained: window.THE_GAME_DEV.useGameStore.getState().wallet.balance - before };
+    const n = answers.length;
+    const again = g.submitAnswer(6, n, answers[n - 1]);
+    return { solvedOnLast: rs[n - 1].caseSolved, earlier: rs.slice(0, n - 1).some((r) => r.caseSolved), again, gained: window.THE_GAME_DEV.useGameStore.getState().wallet.balance - before };
   }, lv.answers);
-  check('Case 06 is SOLVED exactly when its fourth level completes; repeats pay nothing', solve.solvedOnLast && !solve.earlier && !solve.again.caseSolved && solve.again.awarded === 0 && solve.again.scoreAwarded === 0, JSON.stringify(solve));
+  check('Case 06 is SOLVED exactly when its last level completes; repeats pay nothing', solve.solvedOnLast && !solve.earlier && !solve.again.caseSolved && solve.again.awarded === 0 && solve.again.scoreAwarded === 0, JSON.stringify(solve));
   const cover = await dev(() => window.THE_GAME_DEV.deskController.instance.folders.map((f) => f.materials.coverOuter.map.userData.solved ?? null));
-  check('Only the solved folder carries SOLVED + its 2-digit fragment on the cover', cover[5] && cover[5].length === 2 && cover.slice(0, 5).every((x) => x == null), JSON.stringify(cover));
+  const frag6 = lv.frags[5];
+  check(`Only the solved folder carries SOLVED + its ${frag6}-digit fragment on the cover`, cover[5] && cover[5].length === frag6 && cover.every((x, i) => i === 5 || x == null), JSON.stringify(cover));
 
   // ---------------------------------------------------------------- logout (confirmed) and back in
   const gBefore = await game();

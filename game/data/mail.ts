@@ -39,7 +39,7 @@ export function seedInbox(anchor: number): MailMessage[] {
       id: 'msg-01', from: 'THE GAME', to, category: 'general', at: anchor - 2 * MIN, read: false, starred: true, archived: false,
       subject: 'Welcome to the Investigation',
       preview: 'Your case files have been delivered. The investigation begins now.',
-      body: 'Your case files have been delivered. The investigation begins now.\n\nSix files are on your desk. Each holds four pieces of evidence. Solve them, and you will be paid. Fail, and nobody will remember you tried.\n\nTrust no one who calls twice.\n\n— THE GAME',
+      body: 'Your case files have been delivered. The investigation begins now.\n\nSeven files are on your desk. Each holds its own pieces of evidence. Solve them, and you will be paid. Fail, and nobody will remember you tried.\n\nTrust no one who calls twice.\n\n— THE GAME',
     },
     {
       id: 'msg-02', from: 'UNKNOWN SOURCE', to, category: 'deadDrop', at: anchor - 3 * 60 * MIN, read: false, starred: false, archived: false,

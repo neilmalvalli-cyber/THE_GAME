@@ -10,6 +10,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## THE GAME — project notes for coding agents
 
-- Adding or replacing case content (cases 2–5): follow `docs/ADDING_CASES.md` (same content as `docs/THE_GAME_Adding_Cases_Guide.pdf`). Case 1 in `game/data/cases.ts` is the reference.
+- Adding or replacing case content (cases 2–7; two people work in parallel, each edits only their own case blocks): follow `docs/ADDING_CASES.md` (same content as `docs/THE_GAME_Adding_Cases_Guide.pdf`). Case 1 in `game/data/cases.ts` is the reference.
 - Answers, hints and debriefs live ONLY in `game/data/secrets.ts` (replaced by `secrets.stub.ts` in the Supabase build). Never put them in client code, `public/`, or commit `supabase/seed/the_game_seed.sql` or any `.env` with keys.
 - `npm run dev` runs in mock mode (`.env.development`); checks: `npx tsc --noEmit`, `npm run seed`, `npm run test:e2e`, `npm run test:sql` (needs local Postgres).

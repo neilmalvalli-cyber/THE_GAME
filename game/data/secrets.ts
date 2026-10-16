@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 //  THE GAME — SECRETS. Edit this file to set the real puzzle.
 //
-//  ANSWERS      one per level, keyed 'case-level' (case 1–6, level 1–4).
+//  ANSWERS      one per level, keyed 'case-level' (case 1–7, level 1–5).
 //               Compared after normalisation: case, spaces and punctuation ignored;
 //               numeric answers also ignore leading zeros.
 //  HINTS        the Powerful Hint for each level (a method, never the answer).
@@ -47,6 +47,11 @@ export const ANSWERS: Record<string, string> = {
   '6-2': 'WITNESS',
   '6-3': 'CALLER',
   '6-4': 'THE KILLER',
+  // Case 7 — PLACEHOLDER (replace with the real answers)
+  '7-1': 'PLACEHOLDER ONE',
+  '7-2': 'PLACEHOLDER TWO',
+  '7-3': 'PLACEHOLDER THREE',
+  '7-4': 'PLACEHOLDER FOUR',
 };
 
 export const HINTS: Record<string, string> = {
@@ -75,6 +80,10 @@ export const HINTS: Record<string, string> = {
   '6-2': 'A = 1, B = 2 … Z = 26.',
   '6-3': 'Caesar shift of three, backwards.',
   '6-4': 'Base64 again. Decode it and read the name.',
+  '7-1': 'Placeholder hint.',
+  '7-2': 'Placeholder hint.',
+  '7-3': 'Placeholder hint.',
+  '7-4': 'Placeholder hint.',
 };
 
 /** Shown to a team only AFTER it solves the level (Supabase: sent by the server, never in the bundle). */

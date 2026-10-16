@@ -32,9 +32,9 @@ export const LEVEL_SCORE: Record<number, number> = { 1: 100, 2: 150, 3: 200, 4: 
 
 /**
  * How many digits of the nine-digit phone code each case pays out when SOLVED.
- * Three cases pay 1 digit, three pay 2: 3 × 1 + 3 × 2 = 9. Assembly order: case 1 → 6.
+ * Five cases pay 1 digit, two pay 2: 5 × 1 + 2 × 2 = 9. Assembly order: case 1 → 7.
  */
-export const CASE_FRAGMENT_LENGTH: Record<number, number> = { 1: 1, 2: 2, 3: 1, 4: 2, 5: 1, 6: 2 };
+export const CASE_FRAGMENT_LENGTH: Record<number, number> = { 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 1, 7: 1 };
 
 export interface LevelDef {
   /** 1-based level number within its case. */
@@ -352,6 +352,37 @@ export const CASES: CaseDef[] = [
         description: 'The final sheet in the file is typed in a code the archive uses for sealed records. Whoever opens it knows who they are looking for.',
         briefing: 'A sealed record, encoded from its base. Name what you are hunting.',
         evidence: 'VEhFIEtJTExFUg==', evidenceNote: 'Sealed record, final sheet',
+      },
+    ],
+  },
+  {
+    // PLACEHOLDER — replace with the real Case 7 (see docs/ADDING_CASES.md).
+    id: 7,
+    title: 'The Seventh Seal',
+    levels: [
+      {
+        number: 1, title: 'Placeholder Level 1', difficulty: 'Easy', reward: 100,
+        description: 'Placeholder content for Case 7. The real investigation has not been written yet.',
+        briefing: 'Placeholder level — replace with the real Case 7 content.',
+        evidence: 'PLACEHOLDER', evidenceNote: 'Case 7 placeholder',
+      },
+      {
+        number: 2, title: 'Placeholder Level 2', difficulty: 'Medium', reward: 150,
+        description: 'Placeholder content for Case 7. The real investigation has not been written yet.',
+        briefing: 'Placeholder level — replace with the real Case 7 content.',
+        evidence: 'PLACEHOLDER', evidenceNote: 'Case 7 placeholder',
+      },
+      {
+        number: 3, title: 'Placeholder Level 3', difficulty: 'Medium', reward: 200,
+        description: 'Placeholder content for Case 7. The real investigation has not been written yet.',
+        briefing: 'Placeholder level — replace with the real Case 7 content.',
+        evidence: 'PLACEHOLDER', evidenceNote: 'Case 7 placeholder',
+      },
+      {
+        number: 4, title: 'Placeholder Level 4', difficulty: 'Hard', reward: 250,
+        description: 'Placeholder content for Case 7. The real investigation has not been written yet.',
+        briefing: 'Placeholder level — replace with the real Case 7 content.',
+        evidence: 'PLACEHOLDER', evidenceNote: 'Case 7 placeholder',
       },
     ],
   },

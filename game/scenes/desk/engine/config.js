@@ -49,7 +49,7 @@ function seeded(seed) {
 /**
  * Resting transforms for `count` files. Up to five sit in one loose row; more are
  * split into a back row and a front row, staggered, each file with its own small
- * angle and offset — six files dropped on a desk, not a grid.
+ * angle and offset — files dropped on a desk, not a grid.
  */
 export function buildLayout(count) {
   if (count === LAYOUT.length) return LAYOUT.map((l) => ({ ...l }));

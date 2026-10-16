@@ -1,5 +1,5 @@
 ---
-title: "THE GAME — Adding Cases 2 to 5"
+title: "THE GAME — Adding Cases 2 to 7"
 subtitle: "Implementation guide for a coding agent (Codex)"
 ---
 
@@ -7,7 +7,7 @@ subtitle: "Implementation guide for a coding agent (Codex)"
 
 You have no memory of earlier work. Everything you need is in this guide and the repository.
 
-**Project in one paragraph.** THE GAME is a 3D investigation game for a live campus event. Teams sit at a 3D desk with six case folders. Each case has 4–5 levels (puzzles), and solving a level pays score and coins. Teams spend coins on power-ups in a Normal Market and a Black Market. Solving a whole case pays digits of a code that unlocks an evidence phone. It is a **Next.js 16 + React 19 + TypeScript** app, with three.js for the 3D scenes. The game client is in `game/`, mounted by `app/[[...slug]]`. Server actions in `actions/game.ts` talk to **Supabase** (Postgres), where answers are checked by SQL functions (`supabase/migrations/004–006`).
+**Project in one paragraph.** THE GAME is a 3D investigation game for a live campus event. Teams sit at a 3D desk with seven case folders. Each case has 4–5 levels (puzzles), and solving a level pays score and coins. Teams spend coins on power-ups in a Normal Market and a Black Market. Solving a whole case pays digits of a code that unlocks an evidence phone. It is a **Next.js 16 + React 19 + TypeScript** app, with three.js for the 3D scenes. The game client is in `game/`, mounted by `app/[[...slug]]`. Server actions in `actions/game.ts` talk to **Supabase** (Postgres), where answers are checked by SQL functions (`supabase/migrations/004–006`).
 
 **Two modes**, set by `NEXT_PUBLIC_GAME_BACKEND`:
 
@@ -56,24 +56,45 @@ For the admin view (mock mode only), use **Admin Login** with the password from 
 
 This guide is for a coding agent working in the **THE_GAME** repository (`https://github.com/neilmalvalli-cyber/THE_GAME`, branch `main`). It explains how to add four new investigation cases to the game. **Case 1 ("The Fractured Truth") is already finished. Use it as the reference implementation.**
 
-**Where the four cases go.** The 3D desk is built for exactly **six case folders**. Cases 2–6 currently hold placeholder content (Morse code, Caesar cipher and similar). Each of the four new cases **replaces one of those placeholders**:
+**Seven cases, two people working at the same time.** The 3D desk shows one folder per case. The folder layout, camera framing and phone-code split are already set up for **seven cases**.
 
-| New case | Slot | Replaces |
+| Case | Status now | Who fills it |
 |---|---|---|
-| New case A | Case 2 | "The Encrypted Trail" |
-| New case B | Case 3 | "The Ghost File" |
-| New case C | Case 4 | placeholder Case 4 |
-| New case D | Case 5 | placeholder Case 5 |
+| Case 1 | **Finished**. Reference implementation; do not edit | — |
+| Case 2 | Placeholder ("The Encrypted Trail") | **Person A** (the organizer) |
+| Case 3 | Placeholder ("The Ghost File") | **Person A** |
+| Case 4 | Placeholder | **Person B** (teammate) |
+| Case 5 | Placeholder | **Person B** |
+| Case 6 | Placeholder ("The Unknown File") | **Person B** |
+| Case 7 | Placeholder ("The Seventh Seal", 4 placeholder levels) | **Person A** |
 
-Case 6 stays a placeholder unless you are told otherwise.
+Each new case **replaces the placeholder in its slot**. Keep the slot's `id`.
 
-Do **not** add a 7th or later case. That would need new 3D folder layouts and a new phone-code split; see section 9.
+**Do not add an 8th case.** It would need a new phone-code split; see section 9.
+
+## Working in parallel without conflicts
+
+Two Codex sessions edit the same two files (`game/data/cases.ts`, `game/data/secrets.ts`) at the same time. To keep merges clean:
+
+1. **Edit only your own case blocks:**
+   - in `cases.ts`, the `{ id: N, … }` object;
+   - in `secrets.ts`, the `'N-…'` lines in `ANSWERS`, `HINTS` and `DEBRIEFS`.
+2. **Do not reorder, reformat or "tidy" anything else** in those files. Do not run a formatter over the whole file.
+3. **Do not change shared settings:**
+   - `CASE_FRAGMENT_LENGTH`, `UNLOCK_CODE`, `LEVEL_SCORE`;
+   - the interfaces at the top of `cases.ts`;
+   - the test files.
+
+   The tests already read case and level counts from the data, so no test edits are needed for new content.
+4. **Before you start and before you push:** run `git pull --rebase origin main`. If the rebase reports a conflict in `cases.ts` or `secrets.ts`, keep **both** sides: the other person's case and yours. Then re-run `npx tsc --noEmit` and `npm run seed`.
+5. **Commit one case per commit:** `Case N: <title> — <k> levels`.
+6. **Seeding is shared.** Only one person (the organizer) runs the final seed in Supabase, after both sides are merged (section 6).
 
 The human will give you the content of each case: titles, story text, evidence, answers and hints. Your job is to put that content into the data files, keep the answers secret, and verify everything. **The case pages, attempt counting, scoring, admin tools and database rules already exist and do not need new code.**
 
 ## Paste this prompt into Codex together with this PDF
 
-> Read the attached guide "THE GAME — Adding Cases 2 to 5" and follow it exactly. Implement the case brief(s) I give you below as Case N (replacing the placeholder in that slot). Use Case 1 in `game/data/cases.ts` as the reference. Put answers, hints and debriefs ONLY in `game/data/secrets.ts`. Do not change Case 1, the 3D scenes, the SQL migrations or the server code unless the guide says so. Use the content exactly as written; do not invent clues, evidence or answers — ask me if something is missing. When done, run every check in section 7 and report the results in the format of section 8.
+> Read the attached guide "THE GAME — Adding Cases 2 to 7" and follow it exactly, including "Working in parallel without conflicts". Another person is editing other cases at the same time. Implement the case brief(s) I give you below as Case N (replacing the placeholder in that slot); edit only that case. Use Case 1 in `game/data/cases.ts` as the reference. Put answers, hints and debriefs ONLY in `game/data/secrets.ts`. Do not change Case 1, the 3D scenes, the SQL migrations or the server code unless the guide says so. Use the content exactly as written; do not invent clues, evidence or answers — ask me if something is missing. When done, run every check in section 7 and report the results in the format of section 8.
 >
 > CASE BRIEF: (paste the filled template from section 10 here)
 
@@ -117,7 +138,7 @@ The human will give you the content of each case: titles, story text, evidence, 
 
 ```ts
 {
-  id: 2,                                   // slot 2–5; keep the id of the placeholder you replace
+  id: 2,                                   // slot 2–7; keep the id of the placeholder you replace
   title: 'The Case Title',                 // printed on the 3D folder cover — keep it short (≤ 28 chars)
   classification: 'RESTRICTED',            // optional label on the case overview
   closedLines: ['ALL FOUR INVESTIGATIONS VERIFIED', 'THE TRUTH HAS BEEN RECOVERED', 'CASE STATUS: COMPLETED'],
@@ -257,15 +278,13 @@ export const DEBRIEFS = {
 | 8 | Manual: solve every level in a random order | CASE FILE CLOSED screen; a phone-code digit is awarded |
 | 9 | Search the production build for answers: `NEXT_PUBLIC_GAME_BACKEND=supabase npx next build`, then `grep -ri "<an answer>" .next/static` | No matches |
 
-## 7.1 Tests that know the case layout (update them if you change level counts)
+## 7.1 Tests and case layout
 
-| Where | What it assumes |
-|---|---|
-| `scripts/e2e.mjs`, check "Six cases (Case 1 has five levels, the rest four)" | Level counts `'5,4,4,4,4,4'` and 25 routes. Update both to the new counts. |
-| `supabase/tests/game_test.sql`, sections "answers", "skip token", "master key" | Use **Case 2**, assuming 4 levels; "last level solves the case" submits 2-3 then 2-4. If Case 2 gets 5 levels, also submit 2-5 before checking `caseSolved`. Answers are read from the database (`pg_temp.ans`), so new answers need no test change. |
-| `supabase/tests/game_test.sql`, check "correct answer (any case/spacing/punctuation)" | Submits `' ' \|\| lower(answer) \|\| '! '` for level 2-2, so 2-2 must be a `text`/`numeric` answer. If 2-2 becomes `fields` or `witness`, point this check at another plain-text level. |
-| `scripts/e2e.mjs` "Case 06 is SOLVED exactly when its fourth level completes" | Case 6. Unaffected while Case 6 stays as is. |
-| `scripts/e2e-supabase.mjs`, `scripts/e2e-case1.mjs` | Case 1 only. Unaffected. |
+The tests read case and level counts from the data. **New content needs no test edits**, and you must not edit test files; the other person relies on them too. Things to know:
+
+- `scripts/e2e.mjs` expects **7 cases**, fragments adding up to 9, and solves **Case 6** in mock mode with its answers from `secrets.ts`, so Case 6's answers must be correct.
+- `supabase/tests/game_test.sql` plays through **Case 2** in its generic checks (wrong answer, correct answer, skip token, solving every level). It reads the answers and level count from the database, so any valid Case 2 works.
+- If a test fails because of a case you did not write, report it; do not "fix" the other person's case.
 
 **Never weaken or delete a test to make it pass.** Update the expectations to the new layout and explain why in the commit message.
 
@@ -280,8 +299,8 @@ export const DEBRIEFS = {
 
 # 9. Out of scope unless explicitly requested
 
-- **More than six cases.** This needs all of the following:
-  - new 3D folder positions (`game/scenes/desk/engine/config.js`);
+- **More than seven cases.** This needs:
+  - a check of the 3D desk framing (`game/scenes/desk/engine/config.js`; the layout itself is automatic);
   - a new phone-code split (`CASE_FRAGMENT_LENGTH` must still add up to the length of `UNLOCK_CODE`);
   - UI and test updates.
 - **Changes to scoring rules, power-ups, markets, the phone, the admin page or SQL migrations.**
@@ -290,7 +309,7 @@ export const DEBRIEFS = {
 # 10. Case brief template (the human fills one per case)
 
 ```
-CASE SLOT: 2 | 3 | 4 | 5
+CASE SLOT: 2 | 3 | 4 | 5 | 6 | 7
 CASE TITLE (≤ 28 characters):
 CLASSIFICATION (optional, e.g. RESTRICTED):
 CASE CLOSED LINES (optional, up to 3):

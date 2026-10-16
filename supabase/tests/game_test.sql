@@ -5,6 +5,9 @@ CREATE OR REPLACE FUNCTION pg_temp.ok(cond BOOLEAN, what TEXT) RETURNS VOID LANG
 BEGIN IF cond IS NOT TRUE THEN RAISE EXCEPTION 'FAIL: %', what; END IF; RAISE NOTICE 'PASS  %', what; END $$;
 CREATE OR REPLACE FUNCTION pg_temp.ans(p_case INT, p_level INT) RETURNS TEXT LANGUAGE sql AS $$
   SELECT answer FROM game_level_row(game_event(), p_case, p_level) $$;
+CREATE OR REPLACE FUNCTION pg_temp.nlev(p_case INT) RETURNS INT LANGUAGE sql AS $$
+  SELECT max(l.level_number) FROM challenge_levels l JOIN challenges c ON c.id = l.challenge_id
+  WHERE c.event_id = game_event() AND c.display_order = p_case AND l.status = 'published' $$;
 
 -- two teams, A and B
 INSERT INTO auth.users (id, email) VALUES ('00000000-0000-0000-0000-00000000000a', 'a@test'), ('00000000-0000-0000-0000-00000000000b', 'b@test'), ('00000000-0000-0000-0000-00000000000c', 'c@test');
@@ -17,7 +20,7 @@ SELECT pg_temp.ok((SELECT get_coin_balance(a, game_event()) = 100 AND get_coin_b
 -- answers
 SELECT pg_temp.ok((SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 1, 'nope')->>'correct' FROM t) = 'false', 'wrong answer rejected');
 SELECT pg_temp.ok((SELECT (game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 2, ' ' || lower(pg_temp.ans(2, 2)) || '! ')->>'awarded')::int FROM t) > 0, 'correct answer (any case/spacing/punctuation) pays coins');
-SELECT pg_temp.ok((SELECT get_score_total(a, game_event()) FROM t) = 150, 'score from the level''s points');
+SELECT pg_temp.ok((SELECT get_score_total(a, game_event()) FROM t) = (SELECT points FROM game_level_row(game_event(), 2, 2)), 'score from the level''s points');
 SELECT pg_temp.ok((SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 2, pg_temp.ans(2, 2)) FROM t)->>'error' = 'rate_limited', 'rapid repeat is rate limited');
 UPDATE submissions SET created_at = created_at - interval '5 seconds';
 SELECT pg_temp.ok((SELECT (r->>'awarded')::int = 0 AND (r->>'alreadyCompleted')::boolean FROM t, game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 2, pg_temp.ans(2, 2)) r), 'a level pays once');
@@ -48,8 +51,9 @@ SELECT pg_temp.ok((SELECT (game_use_skip(a, 2, 1)->>'ok')::boolean FROM t), 'Ski
 SELECT pg_temp.ok((SELECT get_score_total(a, game_event()) FROM t) = (SELECT v FROM s1) AND (SELECT game_state(a)->'skipped' ? 'case-02/level-01' FROM t), 'Skip Token: level cleared, no score');
 SELECT pg_temp.ok((SELECT game_use_skip(a, 2, 3) FROM t)->>'message' = 'You have no Skip Token.', 'Skip Token is consumed');
 UPDATE submissions SET created_at = created_at - interval '5 seconds';
-SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 3, pg_temp.ans(2, 3)) FROM t;
-SELECT pg_temp.ok((SELECT (game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 4, pg_temp.ans(2, 4))->>'caseSolved')::boolean FROM t), 'last level solves the case (skips count)');
+-- solve the rest of case 2 (however many levels it has), the last one separately
+SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, n, pg_temp.ans(2, n)) FROM t, generate_series(3, pg_temp.nlev(2) - 1) n;
+SELECT pg_temp.ok((SELECT (game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, pg_temp.nlev(2), pg_temp.ans(2, pg_temp.nlev(2)))->>'caseSolved')::boolean FROM t), 'last level solves the case (skips count)');
 SELECT pg_temp.ok((SELECT game_state(a)->'fragments' ? '2' AND NOT (game_state(a)->'fragments' ? '1') FROM t), 'state carries only earned fragments');
 
 -- master key
