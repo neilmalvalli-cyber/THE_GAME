@@ -81,3 +81,18 @@
 .is-in-progress .case-index__status { color: #e2b77a; }
 .is-attempts-exhausted .case-index__status { color: #e07a6a; }
 @media (max-width: 720px) { .case-index { bottom: 10px; max-height: 46vh; overflow-y: auto; } }
+.case-index__head { position: relative; }
+.case-index__fold { position: absolute; top: -4px; right: -6px; padding: 4px 8px; background: none; border: 1px solid rgba(232,220,203,.18); border-radius: 3px;
+  font: 500 9.5px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; color: rgba(236,228,214,.7); cursor: pointer; }
+.case-index__fold:hover { color: #ece4d6; border-color: rgba(232,220,203,.4); }
+.case-index.is-folded .case-index__list { display: none; }
+/* shorter screens: one line per investigation so the panel stays clear of the report text */
+@media (max-height: 940px) {
+  .case-index { padding: 10px 12px; width: min(340px, calc(100vw - 32px)); }
+  .case-index__title { font-size: 15px; }
+  .case-index__list { margin-top: 8px; gap: 4px; }
+  .case-index__row { grid-template-columns: 22px 1fr auto auto; grid-template-areas: 'no name left status'; padding: 5px 8px; align-items: baseline; }
+  .case-index__name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .case-index__status { font-size: 8.5px; }
+  .case-index__unit { display: none; }
+}

@@ -68,9 +68,13 @@ function CaseIndex({ caseId, visible, selected, onOpen }: { caseId: number; visi
     return { l, status, left: l.maxAttempts ? Math.max(0, l.maxAttempts - used) : null };
   });
   const done = rows.filter((r) => r.status === 'COMPLETED').length;
+  const [folded, setFolded] = useState(() => { try { return localStorage.getItem('tg.caseIndexFolded') === '1'; } catch { return false; } });
+  const toggle = () => setFolded((f) => { try { localStorage.setItem('tg.caseIndexFolded', f ? '0' : '1'); } catch { /* storage blocked */ } return !f; });
   return (
-    <aside className={`case-index${visible ? ' is-on' : ''}`} aria-label={`Case file ${pad2(caseId)} investigations`} data-testid="case-index">
+    <aside className={`case-index${visible ? ' is-on' : ''}${folded ? ' is-folded' : ''}`} aria-label={`Case file ${pad2(caseId)} investigations`} data-testid="case-index">
       <header className="case-index__head">
+        <button type="button" className="case-index__fold" onClick={toggle} tabIndex={visible ? 0 : -1} aria-expanded={!folded}
+          aria-label={folded ? 'Show investigations' : 'Hide investigations'} data-testid="case-index-fold">{folded ? 'SHOW' : 'HIDE'}</button>
         <div className="case-index__kicker">CASE FILE {pad2(caseId)}{c.classification ? ` · ${c.classification}` : ''}</div>
         <div className="case-index__title">{c.title.toUpperCase()}</div>
         <div className="case-index__meta">
@@ -85,7 +89,7 @@ function CaseIndex({ caseId, visible, selected, onOpen }: { caseId: number; visi
               <span className="case-index__no">{pad2(l.number)}</span>
               <span className="case-index__name">{l.title}</span>
               <span className="case-index__status">{status}</span>
-              {left !== null && <span className="case-index__left">{left} / {l.maxAttempts} attempts</span>}
+              {left !== null && <span className="case-index__left">{left} / {l.maxAttempts}<span className="case-index__unit"> attempts</span></span>}
             </button>
           </li>
         ))}
