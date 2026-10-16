@@ -16,11 +16,12 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 export const ANSWERS: Record<string, string> = {
-  // Case 1
-  '1-1': 'THE START IS HIDDEN',
-  '1-2': 'KEY',
-  '1-3': 'LIGHT',
-  '1-4': 'DESK',
+  // Case 1 — THE FRACTURED TRUTH
+  '1-1': 'cv raman',
+  '1-2': 'honeypot',
+  '1-3': '2',
+  '1-4': 'archive_02|v3|14:29:08 UTC', // account | version | time — all three must match
+  '1-5': '2', // the lying witness (accepts 2, witness 2, witness 02)
   // Case 2
   '2-1': 'WIRE',
   '2-2': 'THIS IS A TEST MESSAGE',
@@ -49,10 +50,11 @@ export const ANSWERS: Record<string, string> = {
 };
 
 export const HINTS: Record<string, string> = {
-  '1-1': 'It is written backwards. Read it from the last letter to the first.',
-  '1-2': 'Only the first letter of each surname matters.',
-  '1-3': 'A = 1, B = 2 … Z = 26.',
-  '1-4': 'Eight-bit binary. Each group is one ASCII character.',
+  '1-1': 'Think of the Indian physicist whose work on the scattering of light won a Nobel Prize, and of the campus building that carries his name.',
+  '1-2': 'Read the card\'s riddle literally: a container that "carries" something sweet. The keyword is the name, not the sweetness.',
+  '1-3': 'Do not trust the STATUS column. Look for the inconsistency between what the log reports and what the recovered note says about tampering.',
+  '1-4': 'Separate successful events from failed ones, and check each backup\'s integrity before trusting its version number. Match the time to the successful event.',
+  '1-5': 'Compare each witness\'s statement with the visual clues in the recording: only one account contradicts what the evidence shows.',
   '2-1': 'Morse code: dots and dashes, one letter per group.',
   '2-2': 'A Caesar shift. Try moving every letter three places back.',
   '2-3': 'Base64. The trailing letters give it away.',
@@ -73,6 +75,11 @@ export const HINTS: Record<string, string> = {
   '6-2': 'A = 1, B = 2 … Z = 26.',
   '6-3': 'Caesar shift of three, backwards.',
   '6-4': 'Base64 again. Decode it and read the name.',
+};
+
+/** Shown to a team only AFTER it solves the level (Supabase: sent by the server, never in the bundle). */
+export const DEBRIEFS: Record<string, string> = {
+  '1-4': 'Account: ARCHIVE_02 — the last successful access to REP-09 is recorded as event E105.\nVersion: V3 — V3 is the last verified preserved version. V4 failed its integrity check.\nTime: 14:29:08 UTC — event E105 records the successful access.',
 };
 
 export const UNLOCK_CODE = '042719583';

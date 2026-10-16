@@ -11,12 +11,12 @@ import { paths } from '../orchestration/routes';
 import { useAuth, logoutAdmin } from '../services/auth';
 import { useTeams, type TeamSummary } from '../services/teams';
 import { ADMIN_MAIL_TYPES, BODY_MAX, SUBJECT_MAX, deliveryStatus, newDraftId, refreshSentRemote, sendMessage, sendMessageRemote, useOutbox, type AdminMailType } from '../services/mail';
-import { adminMiniGame, adminSetMarket, adminSyncMarket, isServerBackend, type AdminMiniGame } from '../services/backend';
+import { adminAttempts, adminLevel, adminMiniGame, adminSetMarket, adminSyncMarket, isServerBackend, type AdminMiniGame } from '../services/backend';
 import {
   activateBlackMarket, closeNormalMarket, deactivateBlackMarket, openNormalMarket,
   useMarketStore, MARKET_EVENT_LABEL,
 } from '../services/marketState';
-import { CASES, MAX_SCORE, pad2 } from '../data/cases';
+import { CASES, MAX_SCORE, levelKey, pad2 } from '../data/cases';
 import './admin.css';
 
 type Section = 'overview' | 'teams' | 'scores' | 'market' | 'mail' | 'activity';
@@ -156,7 +156,7 @@ function TeamDetail({ team, onBack }: { team?: TeamSummary; onBack(): void }) {
         <div className="tile"><span>Total score</span><b>{team.score}</b></div>
         <div className="tile"><span>Coin balance</span><b>{team.coins}</b></div>
         <div className="tile"><span>Cases completed</span><b>{team.casesSolved}/{CASES.length}</b></div>
-        <div className="tile"><span>Levels completed</span><b>{team.levelsCompleted}/{CASES.length * 4}</b></div>
+        <div className="tile"><span>Levels completed</span><b>{team.levelsCompleted}/{CASES.reduce((n, c) => n + c.levels.length, 0)}</b></div>
         <div className="tile"><span>Phone</span><b>{team.phoneUnlocked ? 'Unlocked' : 'Locked'}</b></div>
         <div className="tile"><span>Levels skipped</span><b>{Object.keys(team.skipped).length}</b></div>
       </div>
@@ -168,9 +168,60 @@ function TeamDetail({ team, onBack }: { team?: TeamSummary; onBack(): void }) {
           </li>
         ))}
       </ol>
+      {isServerBackend && <LevelControls team={team} />}
       <h3 className="ops__sub">Completed levels</h3>
       <LevelLines lines={team.breakdown.lines} />
     </section>
+  );
+}
+
+/** Per-level attempts and controls for levels with an attempt limit (server backend). */
+function LevelControls({ team }: { team: TeamSummary }) {
+  const [used, setUsed] = useState<Record<string, number>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const load = async () => { const all = await adminAttempts(); setUsed(all[team.id] ?? {}); };
+  useEffect(() => { void load(); const t = window.setInterval(() => { void load(); }, 5000); return () => window.clearInterval(t); }, [team.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const limited = CASES.filter((c) => c.levels.some((l) => l.maxAttempts));
+  if (!limited.length) return null;
+  const act = async (caseId: number, level: number, action: 'reset' | 'complete' | 'reopen') => {
+    setBusy(`${caseId}-${level}-${action}`); setMsg(null);
+    try {
+      const r = await adminLevel(team.id, caseId, level, action);
+      setMsg(r.ok ? `Case ${pad2(caseId)} level ${pad2(level)}: ${action === 'reset' ? 'attempts reset' : action === 'complete' ? 'marked completed' : 'reopened'}.` : r.message ?? 'Could not do that.');
+      await load(); useTeams.getState().refresh();
+    } finally { setBusy(null); }
+  };
+  return (
+    <>
+      {limited.map((c) => (
+        <div key={c.id} data-testid={`level-controls-${c.id}`}>
+          <h3 className="ops__sub">Case {pad2(c.id)} — {c.title}: investigations</h3>
+          <table className="ops-table">
+            <thead><tr><th>Level</th><th>Status</th><th>Attempts</th><th /></tr></thead>
+            <tbody>
+              {c.levels.map((l) => {
+                const key = levelKey(c.id, l.number);
+                const n = used[key] ?? 0, done = key in team.completed || key in team.skipped;
+                const status = done ? 'COMPLETED' : l.maxAttempts && n >= l.maxAttempts ? 'ATTEMPTS EXHAUSTED' : n > 0 ? 'IN PROGRESS' : 'NOT STARTED';
+                return (
+                  <tr key={key}>
+                    <td>{pad2(l.number)} · {l.title}</td><td>{status}</td><td className="num">{l.maxAttempts ? `${n} / ${l.maxAttempts}` : n}</td>
+                    <td className="ops-table__actions">
+                      <button type="button" className="btn btn--ghost" disabled={!!busy || n === 0} onClick={() => act(c.id, l.number, 'reset')}>Reset attempts</button>
+                      {done
+                        ? <button type="button" className="btn btn--ghost" disabled={!!busy} onClick={() => act(c.id, l.number, 'reopen')}>Reopen</button>
+                        : <button type="button" className="btn btn--ghost" disabled={!!busy} onClick={() => act(c.id, l.number, 'complete')}>Mark completed</button>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ))}
+      {msg && <p className="ops__flash" role="status">{msg}</p>}
+    </>
   );
 }
 

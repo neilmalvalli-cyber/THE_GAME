@@ -92,3 +92,9 @@
 .composer__actions { display: flex; gap: 10px; }
 @media (max-width: 760px) { .case-row { grid-template-columns: 80px 1fr; } }
 .ops-card--wide { margin-top: 16px; }
+.ops-table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 13px; }
+.ops-table th, .ops-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.ops-table th { font: 500 10px/1 var(--font-ui); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.ops-table__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ops-table__actions .btn { padding: 6px 10px; font-size: 11px; }
+@media (max-width: 760px) { .ops-table { display: block; overflow-x: auto; } }

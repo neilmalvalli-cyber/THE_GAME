@@ -15,17 +15,17 @@ SELECT pg_temp.ok(game_create_team('00000000-0000-0000-0000-00000000000c', 'ALPH
 SELECT pg_temp.ok((SELECT get_coin_balance(a, game_event()) = 100 AND get_coin_balance(b, game_event()) = 100 FROM t), 'new teams start with 100 coins');
 
 -- answers
-SELECT pg_temp.ok((SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 1, 1, 'nope')->>'correct' FROM t) = 'false', 'wrong answer rejected');
-SELECT pg_temp.ok((SELECT (game_submit(a, '00000000-0000-0000-0000-00000000000a', 1, 2, ' ' || lower(pg_temp.ans(1, 2)) || '! ')->>'awarded')::int FROM t) > 0, 'correct answer (any case/spacing/punctuation) pays coins');
+SELECT pg_temp.ok((SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 1, 'nope')->>'correct' FROM t) = 'false', 'wrong answer rejected');
+SELECT pg_temp.ok((SELECT (game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 2, ' ' || lower(pg_temp.ans(2, 2)) || '! ')->>'awarded')::int FROM t) > 0, 'correct answer (any case/spacing/punctuation) pays coins');
 SELECT pg_temp.ok((SELECT get_score_total(a, game_event()) FROM t) = 150, 'score from the level''s points');
-SELECT pg_temp.ok((SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 1, 2, pg_temp.ans(1, 2)) FROM t)->>'error' = 'rate_limited', 'rapid repeat is rate limited');
+SELECT pg_temp.ok((SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 2, pg_temp.ans(2, 2)) FROM t)->>'error' = 'rate_limited', 'rapid repeat is rate limited');
 UPDATE submissions SET created_at = created_at - interval '5 seconds';
-SELECT pg_temp.ok((SELECT (r->>'awarded')::int = 0 AND (r->>'alreadyCompleted')::boolean FROM t, game_submit(a, '00000000-0000-0000-0000-00000000000a', 1, 2, pg_temp.ans(1, 2)) r), 'a level pays once');
+SELECT pg_temp.ok((SELECT (r->>'awarded')::int = 0 AND (r->>'alreadyCompleted')::boolean FROM t, game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 2, pg_temp.ans(2, 2)) r), 'a level pays once');
 
 -- markets
 SELECT pg_temp.ok((SELECT game_purchase(a, '00000000-0000-0000-0000-00000000000a', 'firewall', 'black', 'k0') FROM t)->>'reason' = 'market-closed', 'Black Market locked: no sale');
 SELECT pg_temp.ok((SELECT game_purchase(a, '00000000-0000-0000-0000-00000000000a', 'master_key', 'normal', 'k1') FROM t)->>'reason' = 'unknown-item', 'Master Key is not sold in the Normal Market');
-SELECT pg_temp.ok((SELECT (game_purchase(a, '00000000-0000-0000-0000-00000000000a', 'skip_token', 'normal', 'k2')->>'balance')::int FROM t) = 100 + 100 - 60, 'Normal Market charges the list price');
+SELECT pg_temp.ok((SELECT (game_purchase(a, '00000000-0000-0000-0000-00000000000a', 'skip_token', 'normal', 'k2')->>'balance')::int FROM t) = 100 + (SELECT coins FROM game_level_row(game_event(), 2, 2)) - 60, 'Normal Market charges the list price');
 SELECT pg_temp.ok((SELECT game_purchase(a, '00000000-0000-0000-0000-00000000000a', 'skip_token', 'normal', 'k2') FROM t)->>'reason' = 'duplicate', 'one purchase id charges once');
 SELECT pg_temp.ok((SELECT game_purchase(b, '00000000-0000-0000-0000-00000000000b', 'skip_token', 'normal', 'k3')->>'ok' FROM t) = 'true', 'second team buys');
 SELECT pg_temp.ok((SELECT game_purchase(b, '00000000-0000-0000-0000-00000000000b', 'skip_token', 'normal', 'k4') FROM t)->>'reason' = 'insufficient-funds', 'overdraft refused');
@@ -42,22 +42,22 @@ SELECT pg_temp.ok((SELECT game_purchase(a, '00000000-0000-0000-0000-00000000000a
 SELECT game_admin_set_market('00000000-0000-0000-0000-00000000000a', 'reopen');
 
 -- skip token: no score, counts toward the case
-SELECT pg_temp.ok((SELECT game_use_skip(a, 1, 2) FROM t)->>'message' = 'This level is already cleared.', 'cannot skip a solved level');
+SELECT pg_temp.ok((SELECT game_use_skip(a, 2, 2) FROM t)->>'message' = 'This level is already cleared.', 'cannot skip a solved level');
 CREATE TEMP TABLE s1 AS SELECT get_score_total(a, game_event()) AS v FROM t;
-SELECT pg_temp.ok((SELECT (game_use_skip(a, 1, 1)->>'ok')::boolean FROM t), 'Skip Token used');
-SELECT pg_temp.ok((SELECT get_score_total(a, game_event()) FROM t) = (SELECT v FROM s1) AND (SELECT game_state(a)->'skipped' ? 'case-01/level-01' FROM t), 'Skip Token: level cleared, no score');
-SELECT pg_temp.ok((SELECT game_use_skip(a, 1, 3) FROM t)->>'message' = 'You have no Skip Token.', 'Skip Token is consumed');
+SELECT pg_temp.ok((SELECT (game_use_skip(a, 2, 1)->>'ok')::boolean FROM t), 'Skip Token used');
+SELECT pg_temp.ok((SELECT get_score_total(a, game_event()) FROM t) = (SELECT v FROM s1) AND (SELECT game_state(a)->'skipped' ? 'case-02/level-01' FROM t), 'Skip Token: level cleared, no score');
+SELECT pg_temp.ok((SELECT game_use_skip(a, 2, 3) FROM t)->>'message' = 'You have no Skip Token.', 'Skip Token is consumed');
 UPDATE submissions SET created_at = created_at - interval '5 seconds';
-SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 1, 3, pg_temp.ans(1, 3)) FROM t;
-SELECT pg_temp.ok((SELECT (game_submit(a, '00000000-0000-0000-0000-00000000000a', 1, 4, pg_temp.ans(1, 4))->>'caseSolved')::boolean FROM t), 'last level solves the case (skips count)');
-SELECT pg_temp.ok((SELECT game_state(a)->'fragments' ? '1' AND NOT (game_state(a)->'fragments' ? '2') FROM t), 'state carries only earned fragments');
+SELECT game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 3, pg_temp.ans(2, 3)) FROM t;
+SELECT pg_temp.ok((SELECT (game_submit(a, '00000000-0000-0000-0000-00000000000a', 2, 4, pg_temp.ans(2, 4))->>'caseSolved')::boolean FROM t), 'last level solves the case (skips count)');
+SELECT pg_temp.ok((SELECT game_state(a)->'fragments' ? '2' AND NOT (game_state(a)->'fragments' ? '1') FROM t), 'state carries only earned fragments');
 
 -- master key
 INSERT INTO game_inventory (team_id, catalog_id, qty) SELECT a, 'master_key', 2 FROM t;
-SELECT pg_temp.ok((SELECT game_use_master_key(a, 1) FROM t)->>'message' = 'That case is already completed.', 'Master Key refuses a completed case');
+SELECT pg_temp.ok((SELECT game_use_master_key(a, 2) FROM t)->>'message' = 'That case is already completed.', 'Master Key refuses a completed case');
 DELETE FROM s1; INSERT INTO s1 SELECT get_score_total(a, game_event()) FROM t;
-SELECT pg_temp.ok((SELECT (game_use_master_key(a, 2)->>'ok')::boolean FROM t), 'Master Key used');
-SELECT pg_temp.ok((SELECT get_score_total(a, game_event()) FROM t) = (SELECT v FROM s1) AND (SELECT game_case_solved(a, game_event(), 2) FROM t), 'Master Key completes a case without score');
+SELECT pg_temp.ok((SELECT (game_use_master_key(a, 1)->>'ok')::boolean FROM t), 'Master Key used');
+SELECT pg_temp.ok((SELECT get_score_total(a, game_event()) FROM t) = (SELECT v FROM s1) AND (SELECT game_case_solved(a, game_event(), 1) FROM t), 'Master Key completes a case without score');
 SELECT pg_temp.ok((SELECT game_use_master_key(a, 3) FROM t)->>'message' = 'Your team has already used its Master Key.', 'Master Key: once per team');
 
 -- powerful hint
@@ -116,3 +116,43 @@ SELECT pg_temp.ok((SELECT (game_minigame_answer(b, '00000000-0000-0000-0000-0000
 SELECT pg_temp.ok((SELECT game_minigame_answer(a, '00000000-0000-0000-0000-00000000000a', '42')->>'ok' FROM t) = 'false', 'one payout per team');
 SELECT game_minigame_end('00000000-0000-0000-0000-00000000000a');
 SELECT pg_temp.ok((SELECT game_minigame_for(a) IS NULL FROM t), 'ended mini-game disappears');
+
+-- Case 1: answer formats, 8 attempts per level, admin level controls (006)
+SELECT pg_temp.ok(game_answer_ok('ARCHIVE_02 | V3 | 14:29:08', 'archive_02|v3|14:29:08 UTC', 'fields')
+  AND game_answer_ok('archive_02|v3|14:29:08 utc', 'archive_02|v3|14:29:08 UTC', 'fields')
+  AND NOT game_answer_ok('archive_02|v3', 'archive_02|v3|14:29:08 UTC', 'fields')
+  AND NOT game_answer_ok('archive_02|v2|14:29:08 UTC', 'archive_02|v3|14:29:08 UTC', 'fields'), 'three-field answers: every field must match, UTC optional');
+SELECT pg_temp.ok(game_answer_ok('2', '2', 'witness') AND game_answer_ok('Witness 2', '2', 'witness') AND game_answer_ok('witness 02', '2', 'witness')
+  AND NOT game_answer_ok('3', '2', 'witness') AND NOT game_answer_ok('12', '2', 'witness'), 'witness answers: 2 / Witness 2 / Witness 02');
+CREATE OR REPLACE FUNCTION pg_temp.sub(p_team UUID, p_case INT, p_level INT, p_answer TEXT) RETURNS JSONB LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE submissions SET created_at = created_at - interval '5 seconds' WHERE team_id = p_team;
+  RETURN game_submit(p_team, '00000000-0000-0000-0000-00000000000c', p_case, p_level, p_answer);
+END $$;
+CREATE TEMP TABLE c AS SELECT (game_create_team('00000000-0000-0000-0000-00000000000c', 'Charlie', 'CCCCCC')->>'team_id')::uuid AS id;
+SELECT pg_temp.ok((SELECT (pg_temp.sub(id, 1, 1, 'wrong')->>'attemptsRemaining')::int FROM c) = 7, 'wrong answer: 7 attempts remaining');
+SELECT pg_temp.sub(id, 1, 1, 'wrong ' || n) FROM c, generate_series(2, 7) n;
+SELECT pg_temp.ok((SELECT r->>'attemptsRemaining' = '0' AND (r->>'locked')::boolean FROM c, pg_temp.sub(id, 1, 1, 'wrong 8') r), '8th wrong answer locks the level');
+SELECT pg_temp.ok((SELECT (r->>'locked')::boolean AND NOT (r->>'correct')::boolean FROM c, pg_temp.sub(id, 1, 1, pg_temp.ans(1, 1)) r), 'a locked level refuses even the right answer');
+SELECT pg_temp.ok((SELECT count(*) FROM submissions, c WHERE team_id = c.id AND result = 'incorrect') = 8, 'locked submissions are not recorded');
+SELECT pg_temp.ok((SELECT (pg_temp.sub(id, 1, 2, 'wrong')->>'attemptsRemaining')::int FROM c) = 7, 'attempts are independent per level');
+SELECT pg_temp.ok((SELECT (pg_temp.sub(id, 1, 4, pg_temp.ans(1, 4))->>'correct')::boolean FROM c), 'level 4 accepts the three fields');
+SELECT pg_temp.ok((SELECT (r->>'alreadyCompleted')::boolean AND r->>'attemptsRemaining' = '8' FROM c, pg_temp.sub(id, 1, 4, 'wrong') r), 'a completed level does not consume attempts');
+SELECT pg_temp.ok((SELECT game_case_progress(id)->'case-01/level-01'->>'used' = '8' AND game_case_progress(id)->'case-01/level-01'->>'max' = '8'
+  AND game_case_progress(id)->'case-01/level-04' ? 'debrief' AND NOT (game_case_progress(id)->'case-01/level-02' ? 'debrief') FROM c), 'progress: attempts per level, debrief only after solving');
+SELECT pg_temp.ok((game_admin_attempts()->(SELECT id::text FROM c)->>'case-01/level-01') = '8', 'admin sees attempts per team and level');
+SELECT pg_temp.ok((SELECT (game_admin_level('00000000-0000-0000-0000-00000000000a', id, 1, 1, 'reset')->>'ok')::boolean FROM c), 'admin resets attempts');
+SELECT pg_temp.ok((SELECT game_case_progress(id)->'case-01/level-01'->>'used' = '0' FROM c), 'admin reset restores 8 attempts');
+SELECT pg_temp.ok((SELECT (pg_temp.sub(id, 1, 1, ' CV  Raman ')->>'correct')::boolean FROM c), 'reset level accepts the answer');
+CREATE TEMP TABLE s2 AS SELECT get_score_total(id, game_event()) AS v, get_coin_balance(id, game_event()) AS coins FROM c;
+SELECT pg_temp.ok((SELECT (game_admin_level('00000000-0000-0000-0000-00000000000a', id, 1, 3, 'complete')->>'ok')::boolean FROM c), 'admin completes a level');
+SELECT pg_temp.ok((SELECT is_level_solved(id, (SELECT level_id FROM game_level_row(game_event(), 1, 3))) FROM c), 'admin marks a level completed');
+SELECT pg_temp.ok((SELECT (game_admin_level('00000000-0000-0000-0000-00000000000a', id, 1, 3, 'reopen')->>'ok')::boolean FROM c), 'admin reopens a level');
+SELECT pg_temp.ok((SELECT NOT is_level_solved(id, (SELECT level_id FROM game_level_row(game_event(), 1, 3))) FROM c)
+  AND (SELECT get_score_total(id, game_event()) = (SELECT v FROM s2) AND get_coin_balance(id, game_event()) = (SELECT coins FROM s2) FROM c), 'admin reopens a level and takes back its score');
+SELECT pg_temp.ok((SELECT count(*) FROM admin_audit_log WHERE action IN ('level_reset', 'level_complete', 'level_reopen')) = 3, 'admin level actions are audit-logged');
+SELECT pg_temp.ok((SELECT NOT (pg_temp.sub(id, 1, 5, 'witness 02')->>'caseSolved')::boolean FROM c), 'case not closed while levels remain');
+SELECT pg_temp.ok((SELECT (pg_temp.sub(id, 1, 2, 'Honeypot')->>'correct')::boolean FROM c), 'level 2 accepted');
+SELECT pg_temp.ok((SELECT (pg_temp.sub(id, 1, 3, '02')->>'caseSolved')::boolean FROM c), 'all five levels, in any order, close the case');
+SELECT pg_temp.ok(NOT has_function_privilege('anon', 'game_case_progress(uuid)', 'EXECUTE')
+  AND NOT has_function_privilege('authenticated', 'game_admin_level(uuid, uuid, integer, integer, text)', 'EXECUTE'), 'browsers cannot call the case functions');

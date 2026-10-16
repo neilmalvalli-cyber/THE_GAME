@@ -105,7 +105,7 @@ class DeskController {
       return this.initPromise;
     }
     store.set({ deskPhase: 'loading', deskError: null });
-    const scene = new DetectiveDeskScene(this.el, { backButton: false, cases: CASES.map((c) => ({ title: c.title })), quality: profile() });
+    const scene = new DetectiveDeskScene(this.el, { backButton: false, cases: CASES.map((c) => ({ title: c.title, levels: c.levels.map((l) => ({ number: l.number })) })), quality: profile() });
     scene.onSlow = () => useQuality.getState().reportSlow();
     onQuality((_q, p) => scene.setQuality(p));
     this.initPromise = scene.init().then(

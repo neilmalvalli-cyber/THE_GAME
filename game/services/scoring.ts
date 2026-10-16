@@ -1,14 +1,14 @@
 // ScoreService / CaseService (mock). Score is DERIVED from completed levels, so it can never
 // be awarded twice and always agrees with progress. Coins are a separate ledger (wallet).
 // A backend should compute both server-side; this module is the seam.
-import { CASES, LEVELS_PER_CASE, levelKey, levelScore, getCase } from '../data/cases';
+import { CASES, levelKey, levelScore, getCase } from '../data/cases';
 
 export type Completed = Record<string, number>;
 
 /** A case is SOLVED when every level is completed or skipped (Skip Token / Master Key). */
 export function isCaseSolved(caseId: number, completed: Completed, skipped: Completed = {}): boolean {
   const c = getCase(caseId);
-  return !!c && c.levels.length >= LEVELS_PER_CASE && c.levels.every((l) => { const k = levelKey(caseId, l.number); return k in completed || k in skipped; });
+  return !!c && c.levels.length > 0 && c.levels.every((l) => { const k = levelKey(caseId, l.number); return k in completed || k in skipped; });
 }
 
 export function caseProgress(caseId: number, completed: Completed, skipped: Completed = {}) {

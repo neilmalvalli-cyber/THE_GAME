@@ -203,12 +203,13 @@ export async function gameSession(): Promise<GameResult<{ team: TeamIdentity | n
 
 export async function gameState(since?: string | null) {
   const t = await requireTeam(); if (!t.ok) return t
-  const [state, minigame] = await Promise.all([
+  const [state, minigame, levels] = await Promise.all([
     rpc<Record<string, unknown>>('game_state', { p_team: t.teamId, p_since: since ?? null }),
     rpc('game_minigame_for', { p_team: t.teamId }),
+    rpc('game_case_progress', { p_team: t.teamId }),
   ])
   if (!state.ok) return state
-  return { ok: true as const, value: { ...state.value, minigame: minigame.ok ? minigame.value : null } }
+  return { ok: true as const, value: { ...state.value, minigame: minigame.ok ? minigame.value : null, levels: levels.ok ? levels.value : {} } }
 }
 
 /** Answer the live surprise mini-game (coins doubled once by an armed Overclock). */
@@ -332,6 +333,19 @@ export async function gameAdminMinigame(input: { action: 'status' | 'launch' | '
   if (!data) return { ok: true as const, value: null }
   const { count } = await db.from('surprise_submissions').select('id', { count: 'exact', head: true }).eq('surprise_event_id', data.id)
   return { ok: true as const, value: { id: data.id, question: data.question_text, coins: data.coins_reward, endsAt: new Date(data.ends_at).getTime(), solvedBy: count ?? 0 } }
+}
+
+/** Admin: wrong attempts per team and level. */
+export async function gameAdminAttempts() {
+  const a = await requireAdmin(); if (!a.ok) return a
+  return rpc<Record<string, Record<string, number>>>('game_admin_attempts', {})
+}
+
+/** Admin: reset a level's attempts, mark it completed, or reopen it (audit-logged). */
+export async function gameAdminLevel(input: { teamId: string; caseId: number; level: number; action: 'reset' | 'complete' | 'reopen' }) {
+  const a = await requireAdmin(); if (!a.ok) return a
+  if (!['reset', 'complete', 'reopen'].includes(input?.action)) return fail('Unknown action.')
+  return rpc('game_admin_level', { p_user: a.userId, p_team: String(input.teamId), p_case: Number(input.caseId), p_level: Number(input.level), p_action: input.action })
 }
 
 export async function gameAdminSent() {

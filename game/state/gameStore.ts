@@ -13,11 +13,11 @@ import { getCase, getLevel, levelKey, levelScore } from '../data/cases';
 import { getCatalogItem, getMarketItem } from '../data/market';
 import { canPurchase, type MarketType } from '../services/marketState';
 import { seedInbox, type MailMessage } from '../data/mail';
-import { HINTS } from '@/game/data/secrets';
+import { DEBRIEFS, HINTS } from '@/game/data/secrets';
 
 export const GENERIC_HINT = 'Study the format of the evidence: it names the method.';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 export const teamStorageKey = (teamId: string) => `the-game:team:${teamId}`;
 /** Where the store points while nobody is signed in (never holds a team's data). */
 const NO_TEAM_KEY = 'the-game:team:-';
@@ -68,6 +68,10 @@ export interface SubmitResult {
   alreadyCompleted: boolean;
   /** This submission completed the case's last level. */
   caseSolved: boolean;
+  /** Wrong answers left on this level (undefined = unlimited). */
+  attemptsRemaining?: number;
+  /** The level accepts no more answers (wrong-attempt limit reached). */
+  locked?: boolean;
 }
 
 export type PowerUpResult = { ok: true; caseSolved?: boolean; message: string } | { ok: false; message: string };
@@ -88,7 +92,11 @@ interface GameData {
     completed: Record<string, number>;
     /** levelKey → skip time (Skip Token / Master Key): counts toward solving, never toward score. */
     skipped: Record<string, number>;
+    /** levelKey → wrong answers submitted (levels with an attempt limit lock at the limit). */
+    attempts: Record<string, number>;
   };
+  /** levelKey → what the evidence shows, revealed after the level is solved. */
+  debriefs: Record<string, string>;
   /** Power-ups owned and not yet used: catalogue id → count. */
   inventory: Record<string, number>;
   /** Power-up state on this team. */
@@ -191,7 +199,8 @@ function freshData(team: { id: string; name: string; createdAt: number } = { id:
     team,
     introSeen: false,
     lastActivity: Date.now(),
-    progress: { selectedLevel: {}, completed: {}, skipped: {} },
+    progress: { selectedLevel: {}, completed: {}, skipped: {}, attempts: {} },
+    debriefs: {},
     inventory: {},
     effects: freshEffects(),
     wallet: freshWallet(team.id || MOCK_TEAM.id),
@@ -266,9 +275,21 @@ export const useGameStore = create<GameStore>()(
           const key = levelKey(caseId, level);
           const alreadyCompleted = key in get().progress.completed;
           set({ lastActivity: Date.now() });
-          if (!def || !checkAnswer(caseId, level, answer)) {
-            return { correct: false, awarded: 0, scoreAwarded: 0, alreadyCompleted, caseSolved: false };
+          const max = def?.maxAttempts;
+          const used = get().progress.attempts?.[key] ?? 0;
+          const left = (n: number) => (max ? Math.max(0, max - n) : undefined);
+          // a locked level (limit reached) takes no more answers and its counter never moves
+          if (max && used >= max && !alreadyCompleted) {
+            return { correct: false, awarded: 0, scoreAwarded: 0, alreadyCompleted, caseSolved: false, attemptsRemaining: 0, locked: true };
           }
+          if (!def || !checkAnswer(caseId, level, answer)) {
+            // a solved level never consumes attempts
+            const n = alreadyCompleted ? used : used + 1;
+            if (!alreadyCompleted && max) set((s) => ({ progress: { ...s.progress, attempts: { ...s.progress.attempts, [key]: n } } }));
+            return { correct: false, awarded: 0, scoreAwarded: 0, alreadyCompleted, caseSolved: false, attemptsRemaining: left(n), locked: !!max && n >= max && !alreadyCompleted };
+          }
+          const debrief = DEBRIEFS[`${caseId}-${level}`];
+          if (debrief) set((s) => ({ debriefs: { ...s.debriefs, [key]: debrief } }));
           // score is derived from completed levels (once per level); coins go through the ledger (once per level)
           const wasSolved = isCaseSolved(caseId, get().progress.completed, get().progress.skipped);
           if (!alreadyCompleted) {
@@ -276,7 +297,7 @@ export const useGameStore = create<GameStore>()(
           }
           const r = get().earnCoins(def.reward, key, `Level completed · Case ${String(caseId).padStart(2, '0')} / ${String(level).padStart(2, '0')}`);
           const caseSolved = !wasSolved && isCaseSolved(caseId, get().progress.completed, get().progress.skipped);
-          return { correct: true, awarded: r.ok ? def.reward : 0, scoreAwarded: alreadyCompleted ? 0 : levelScore(def), alreadyCompleted, caseSolved };
+          return { correct: true, awarded: r.ok ? def.reward : 0, scoreAwarded: alreadyCompleted ? 0 : levelScore(def), alreadyCompleted, caseSolved, attemptsRemaining: left(used) };
         },
 
         earnCoins(amount, sourceId, label = 'Reward') {
@@ -462,16 +483,22 @@ export const useGameStore = create<GameStore>()(
       // nothing loads until a team signs in (auth service → loadTeam)
       skipHydration: true,
       partialize: (s) => {
-        const { schemaVersion, session, team, introSeen, lastActivity, progress, wallet, purchases, inventory, effects, inbox, settings, story, marketMail, phone, fragments } = s;
-        return { schemaVersion, session, team, introSeen, lastActivity, progress, wallet, purchases, inventory, effects, inbox, settings, story, marketMail, phone, fragments };
+        const { schemaVersion, session, team, introSeen, lastActivity, progress, wallet, purchases, inventory, effects, inbox, settings, story, marketMail, phone, fragments, debriefs } = s;
+        return { schemaVersion, session, team, introSeen, lastActivity, progress, wallet, purchases, inventory, effects, inbox, settings, story, marketMail, phone, fragments, debriefs };
       },
       // Unknown/older schemas start clean rather than half-loading.
       migrate: (persisted, version) => {
         if (version === SCHEMA_VERSION) return persisted as GameData;
-        // v2 → v3: power-ups added; keep the save
-        if (version === 2) {
+        // older saves: Case 1 changed completely (new levels), so its progress starts fresh
+        if (version === 2 || version === 3) {
           const p = persisted as GameData;
-          return { ...p, schemaVersion: SCHEMA_VERSION, progress: { ...p.progress, skipped: {} }, inventory: {}, effects: freshEffects(), fragments: {} };
+          const keep = (o: Record<string, number> = {}) => Object.fromEntries(Object.entries(o).filter(([k]) => !k.startsWith('case-01/')));
+          return {
+            ...p, schemaVersion: SCHEMA_VERSION,
+            progress: { ...p.progress, completed: keep(p.progress.completed), skipped: version === 3 ? keep(p.progress.skipped) : {}, attempts: {} },
+            inventory: version === 3 ? p.inventory : {}, effects: version === 3 ? { ...freshEffects(), ...p.effects, hintTexts: p.effects?.hintTexts ?? {} } : freshEffects(),
+            fragments: {}, debriefs: {},
+          };
         }
         return freshData();
       },

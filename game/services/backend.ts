@@ -112,6 +112,12 @@ function applyState(st: Raw) {
   }
   useRivals.setState({ rivals: (st.rivals ?? []) as { id: string; name: string }[] });
   useMiniGame.setState({ game: (st.minigame ?? null) as MiniGame | null });
+  // per-level attempts (limits are enforced on the server) and debriefs of solved levels
+  const levels = (st.levels ?? {}) as Record<string, { used?: number; debrief?: string }>;
+  useGameStore.setState((s) => ({
+    progress: { ...s.progress, attempts: Object.fromEntries(Object.entries(levels).map(([k, v]) => [k, Number(v.used ?? 0)])) },
+    debriefs: Object.fromEntries(Object.entries(levels).filter(([, v]) => v.debrief).map(([k, v]) => [k, String(v.debrief)])),
+  }));
 }
 
 /** Pull the team's state from the server into this browser. */
@@ -148,7 +154,10 @@ export async function submitAnswer(caseId: number, level: number, answer: string
   const v = r.value as Raw;
   if (v.error) return { ...none, error: v.error === 'rate_limited' ? 'Slow down — one attempt per second.' : FAIL };
   await syncTeam();
-  return { correct: !!v.correct, awarded: Number(v.awarded ?? 0), scoreAwarded: Number(v.scoreAwarded ?? 0), alreadyCompleted: !!v.alreadyCompleted, caseSolved: !!v.caseSolved };
+  return {
+    correct: !!v.correct, awarded: Number(v.awarded ?? 0), scoreAwarded: Number(v.scoreAwarded ?? 0), alreadyCompleted: !!v.alreadyCompleted, caseSolved: !!v.caseSolved,
+    attemptsRemaining: v.attemptsRemaining == null ? undefined : Number(v.attemptsRemaining), locked: !!v.locked,
+  };
 }
 
 /** `itemId` is the market purchase key (`store_<id>` in the Normal Market). */
@@ -253,6 +262,18 @@ export async function adminSent(): Promise<ServerSent[]> {
     id: String(m.id), to: (m.to === 'all' ? 'all' : (m.to ?? [])) as 'all' | string[], toLabel: String(m.toLabel ?? ''),
     subject: String(m.subject), body: String(m.body), type: String(m.type), at: ms(m.at),
   }));
+}
+
+export async function adminAttempts(): Promise<Record<string, Record<string, number>>> {
+  const r = await server.gameAdminAttempts();
+  return r.ok ? (r.value ?? {}) : {};
+}
+
+export async function adminLevel(teamId: string, caseId: number, level: number, action: 'reset' | 'complete' | 'reopen'): Promise<{ ok: boolean; message?: string }> {
+  const r = await server.gameAdminLevel({ teamId, caseId, level, action });
+  if (!r.ok) return { ok: false, message: r.error };
+  const v = (r.value ?? {}) as Raw;
+  return { ok: !!v.ok, message: v.message ? String(v.message) : undefined };
 }
 
 export const newPurchaseId = () => uid('purchase');

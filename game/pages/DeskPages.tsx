@@ -54,6 +54,46 @@ export function DeskPage() {
   );
 }
 
+/** The case overview: every investigation, its status and attempts — all open from the start. */
+function CaseIndex({ caseId, visible, selected, onOpen }: { caseId: number; visible: boolean; selected: number; onOpen(level: number): void }) {
+  const c = getCase(caseId)!;
+  const completed = useGameStore((s) => s.progress.completed);
+  const skipped = useGameStore((s) => s.progress.skipped);
+  const attempts = useGameStore((s) => s.progress.attempts);
+  const rows = c.levels.map((l) => {
+    const key = levelKey(caseId, l.number);
+    const used = attempts?.[key] ?? 0;
+    const done = key in completed || key in skipped;
+    const status = done ? 'COMPLETED' : l.maxAttempts && used >= l.maxAttempts ? 'ATTEMPTS EXHAUSTED' : used > 0 ? 'IN PROGRESS' : 'NOT STARTED';
+    return { l, status, left: l.maxAttempts ? Math.max(0, l.maxAttempts - used) : null };
+  });
+  const done = rows.filter((r) => r.status === 'COMPLETED').length;
+  return (
+    <aside className={`case-index${visible ? ' is-on' : ''}`} aria-label={`Case file ${pad2(caseId)} investigations`} data-testid="case-index">
+      <header className="case-index__head">
+        <div className="case-index__kicker">CASE FILE {pad2(caseId)}{c.classification ? ` · ${c.classification}` : ''}</div>
+        <div className="case-index__title">{c.title.toUpperCase()}</div>
+        <div className="case-index__meta">
+          {done === rows.length ? 'CASE STATUS: COMPLETED' : 'CASE STATUS: INVESTIGATION ACTIVE'} · INVESTIGATION PROGRESS: {done} / {rows.length}
+        </div>
+      </header>
+      <ol className="case-index__list">
+        {rows.map(({ l, status, left }) => (
+          <li key={l.number}>
+            <button type="button" className={`case-index__row is-${status.toLowerCase().replace(/ /g, '-')}${selected === l.number ? ' is-selected' : ''}`}
+              onClick={() => onOpen(l.number)} tabIndex={visible ? 0 : -1} data-testid={`case-row-${l.number}`}>
+              <span className="case-index__no">{pad2(l.number)}</span>
+              <span className="case-index__name">{l.title}</span>
+              <span className="case-index__status">{status}</span>
+              {left !== null && <span className="case-index__left">{left} / {l.maxAttempts} attempts</span>}
+            </button>
+          </li>
+        ))}
+      </ol>
+    </aside>
+  );
+}
+
 export function CasePage() {
   const { caseId: raw } = useParams();
   const caseId = parseId(raw)!;
@@ -99,7 +139,7 @@ export function CasePage() {
       if (e.key === 'Escape') { navigate(paths.desk); return; }
       if (!isOpen) return;
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-        const n = Math.min(4, Math.max(1, selected + (e.key === 'ArrowRight' ? 1 : -1)));
+        const n = Math.min(getCase(caseId)?.levels.length ?? 4, Math.max(1, selected + (e.key === 'ArrowRight' ? 1 : -1)));
         selectLevel(caseId, n); deskController.setSelectedLevel(caseId, n);
       } else if (e.key === 'Enter' && !(e.target as Element)?.closest?.('button')) {
         void openLevel(selected);
@@ -116,8 +156,10 @@ export function CasePage() {
   return (
     <div className="hud hud--case">
       <button type="button" className={`paper-back${isOpen ? ' is-on' : ''}`} onClick={() => navigate(paths.desk)} tabIndex={isOpen ? 0 : -1}>
-        <IconArrowLeft /><span>Back to Desk</span><kbd>Esc</kbd>
+        <IconArrowLeft /><span>Back to All Cases</span><kbd>Esc</kbd>
       </button>
+
+      <CaseIndex caseId={caseId} visible={isOpen} selected={selected} onOpen={(l) => void openLevel(l)} />
 
       <div className="sr-only" aria-live="polite">
         {isOpen ? `Level ${pad2(selected)}: ${lvl.title}. ${lvl.difficulty}. Reward ${lvl.reward} coins. ${solved ? 'Completed' : 'Available'}. ${lvl.description}` : ''}

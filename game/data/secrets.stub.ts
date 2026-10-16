@@ -2,4 +2,5 @@
 // the phone code stay on the server.
 export const ANSWERS: Record<string, string> = {};
 export const HINTS: Record<string, string> = {};
+export const DEBRIEFS: Record<string, string> = {};
 export const UNLOCK_CODE = '';

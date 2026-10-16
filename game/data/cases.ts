@@ -5,7 +5,26 @@
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 
 /** Answer formats the level page understands (more can be added without changing pages). */
-export type AnswerType = 'text' | 'numeric' | 'choice';
+export type AnswerType = 'text' | 'numeric' | 'choice' | 'fields' | 'witness';
+
+/** A block of the investigation page (used instead of briefing/evidence when present). */
+export interface LevelSection {
+  heading?: string;
+  /** Paragraphs. */
+  body?: string[];
+  /** Shown as a classified document (quoted clue). */
+  document?: string[];
+  list?: string[];
+  ordered?: boolean;
+  /** A monospaced line, e.g. a system status. */
+  code?: string;
+  tone?: 'warning' | 'note';
+  table?: { title?: string; subtitle?: string; columns: string[]; rows: string[][] };
+  /** External evidence (opens in a new tab). */
+  link?: { label: string; url: string };
+  /** Optional embedded video (empty url = not shown). */
+  video?: { title: string; url: string };
+}
 
 // ---- configurable scoring (placeholders) --------------------------------------------
 /** Score per level number (competitive ranking). Coins are separate (LevelDef.reward). */
@@ -38,42 +57,151 @@ export interface LevelDef {
   briefing: string;
   evidence: string;
   evidenceNote?: string;
+  /** e.g. 'LOCATION INTELLIGENCE'. */
+  classification?: string;
+  /** Rich page content (replaces briefing + evidence on the level page). */
+  sections?: LevelSection[];
+  /** The question asked above the answer box. */
+  question?: string;
+  placeholder?: string;
+  submitLabel?: string;
+  /** answerType 'fields': submitted together as one answer, joined with "|". */
+  fields?: { key: string; label: string; placeholder: string }[];
+  formatHint?: string;
+  /** Wrong answers allowed before the level locks (unlimited when absent). */
+  maxAttempts?: number;
+  /** Two lines shown on success, e.g. ['LOCATION CONFIRMED', 'LEVEL 01 — COMPLETED']. */
+  successLines?: [string, string];
 }
 
 export interface CaseDef {
   id: number;
   title: string;
+  /** Shown on the case overview. */
+  classification?: string;
+  /** Lines of the CASE CLOSED screen. */
+  closedLines?: string[];
   levels: LevelDef[];
 }
 
 export const CASES: CaseDef[] = [
   {
     id: 1,
-    title: 'The Entry Point',
+    title: 'The Fractured Truth',
+    classification: 'RESTRICTED',
+    closedLines: ['ALL FIVE INVESTIGATIONS VERIFIED', 'THE TRUTH HAS BEEN RECOVERED', 'CASE STATUS: COMPLETED'],
     levels: [
       {
-        number: 1, title: 'The First Call', difficulty: 'Easy', reward: 100,
-        description: 'The call came in at 11:47 and nobody answered. A voicemail was left, recorded strangely — as if the caller was speaking from the end of the sentence.',
-        briefing: 'The voicemail left on the phone plays back wrong. Restore the message.',
-        evidence: 'NEDDIH SI TRATS EHT', evidenceNote: 'Voicemail transcript, 11:47',
+        number: 1, title: 'The First Destination', difficulty: 'Easy', reward: 100, score: 100, maxAttempts: 8,
+        classification: 'LOCATION INTELLIGENCE',
+        description: 'Every investigation begins somewhere. An intelligence report points to a building on campus, described only by the mind it is named after.',
+        briefing: 'Identify the building described in the intelligence report.', evidence: '',
+        sections: [
+          { heading: 'Intelligence report', document: [
+            'Every investigation begins somewhere, but the truth rarely waits where the search begins.',
+            'You stand where tomorrow’s ideas take shape, yet your next lead lies among those just beginning their journey.',
+            'Seek the place named after a mind that explored the mysteries of light and matter. Climb beyond the first two levels, where silent witnesses display notices for those who know where to look.',
+          ] },
+          { heading: 'Investigation objective', body: ['Identify the building described in the intelligence report.'] },
+        ],
+        placeholder: 'ENTER LOCATION NAME', submitLabel: 'SUBMIT FINAL ANSWER',
+        successLines: ['LOCATION CONFIRMED', 'LEVEL 01 — COMPLETED'],
       },
       {
-        number: 2, title: "The Doorman's Ledger", difficulty: 'Easy', reward: 100,
-        description: 'Three guests signed the ledger at the service entrance after midnight. None of them exists in any registry. The doorman insists the names were chosen with care.',
-        briefing: 'Three names, one word. Read the ledger the way it was written.',
-        evidence: 'KESSLER, M. — 00:12\nELWOOD, J. — 00:19\nYARROW, T. — 00:31', evidenceNote: 'Service entrance ledger, page 41',
+        number: 2, title: 'The Hidden Honeypot', difficulty: 'Medium', reward: 150, score: 150, maxAttempts: 8,
+        classification: 'FIELD INVESTIGATION',
+        description: 'The investigation has moved beyond the digital world. A piece of evidence is concealed somewhere on campus.',
+        briefing: 'Recover the hidden message from the physical location revealed by the previous clue.', evidence: '',
+        sections: [
+          { heading: 'Field intelligence required', body: [
+            'The investigation has moved beyond the digital world. Your next piece of evidence is concealed somewhere on campus.',
+            'Recover the hidden message from the physical location revealed by the previous clue.',
+          ] },
+        ],
+        placeholder: 'ENTER DISCOVERED KEYWORD', submitLabel: 'SUBMIT FINAL ANSWER',
+        successLines: ['FIELD EVIDENCE VERIFIED', 'LEVEL 02 — COMPLETED'],
       },
       {
-        number: 3, title: 'Numbers on the Wall', difficulty: 'Medium', reward: 150,
-        description: 'A row of numbers was scratched into the plaster beside the fuse box. The paint around it is fresh. Someone wanted it found — but only by someone who counts.',
-        briefing: 'Each number stands for a letter. Find the word on the wall.',
-        evidence: '12 · 9 · 7 · 8 · 20', evidenceNote: 'Scratched beside the fuse box',
+        number: 3, title: 'The Corrupted Access Log', difficulty: 'Medium', reward: 150, score: 150, maxAttempts: 8,
+        classification: 'DIGITAL FORENSICS', answerType: 'numeric',
+        description: 'Five login attempts under three accounts. The report says every one failed. An anonymous note says the record was tampered with.',
+        briefing: 'How many login attempts actually succeeded?', evidence: '',
+        sections: [
+          { heading: 'Case File 01: The Corrupted Access Log', body: [
+            'A suspicious breach has been detected in a restricted system. Five login attempts were recorded under three different accounts, but the final report claims that every attempt failed.',
+            'Before the investigation could proceed, an anonymous source recovered a note suggesting that the records may have been tampered with.',
+            'Your task is to examine the evidence carefully. Don’t blindly trust what the system reports—sometimes, the truth is hidden in the smallest inconsistency.',
+          ] },
+          { table: { title: 'INCIDENT 09', subtitle: 'ACCESS LOG — INTEGRITY UNVERIFIED', columns: ['Attempt', 'Account', 'Status'], rows: [
+            ['01', 'GUEST', 'FAILED'], ['02', 'ADMIN', 'FAILED'], ['03', 'ARCHIVE', 'FAILED'], ['04', 'GUEST', 'FAILED'], ['05', 'ADMIN', 'FAILED'],
+          ] } },
+          { heading: 'Recovered note', body: ['The report claims every attempt failed—but reports can lie. Verify the record before you trust the result.'], tone: 'note' },
+          { code: 'POSSIBLE LOG TAMPERING', tone: 'warning' },
+        ],
+        question: 'How many login attempts actually succeeded?',
+        placeholder: 'ENTER NUMBER', submitLabel: 'SUBMIT FINAL ANSWER',
+        successLines: ['LOG ANALYSIS ACCEPTED', 'LEVEL 03 — COMPLETED'],
       },
       {
-        number: 4, title: 'The Locked Drawer', difficulty: 'Medium', reward: 150,
-        description: 'A label taped under the drawer was printed by a machine that only speaks in ones and zeroes. Whatever it names is where the investigation truly begins.',
-        briefing: 'The label under the drawer is machine-printed. Translate it.',
-        evidence: '01000100 01000101 01010011 01001011', evidenceNote: 'Label under the drawer',
+        number: 4, title: 'The Ghost Files', difficulty: 'Hard', reward: 200, score: 250, maxAttempts: 8,
+        classification: 'EVIDENCE COMPROMISED', answerType: 'fields',
+        description: 'The official report claims the case is solved. A folder of logs, backups, notes and a timeline says otherwise.',
+        briefing: 'Determine the account, the last valid backup version and the exact access time.', evidence: '',
+        sections: [
+          { code: 'CASE STATUS: EVIDENCE COMPROMISED', tone: 'warning' },
+          { body: [
+            'A suspicious digital incident has left behind a collection of records. The official report claims the case is solved, but several details may not be what they seem.',
+            'Your team has been granted access to a digital evidence folder containing system logs, backup records, investigator notes, an incident timeline, and a final report.',
+            'Your mission is to uncover what actually happened.',
+          ] },
+          { heading: 'Investigation objectives', ordered: true, list: [
+            'Which account last accessed the report successfully?',
+            'Which backup version is the last verified, valid preserved version?',
+            'At what exact time did that successful access occur?',
+          ] },
+          { heading: 'Rules of investigation', list: [
+            'Examine the files carefully and cross-check information between them.',
+            'Do not automatically trust the final report.',
+            'A higher version number does not necessarily mean a file is authentic.',
+            'Distinguish successful operations from failed attempts.',
+            'All timestamps are in UTC.',
+            'Base your conclusion on the available evidence, not assumptions.',
+          ] },
+          { link: { label: 'OPEN EVIDENCE ARCHIVE', url: 'https://drive.google.com/drive/folders/1xe1zbv03Z2v2Ao9YhZZidv-5spEgTFBH?usp=sharing' } },
+        ],
+        fields: [
+          { key: 'account', label: 'ACCOUNT IDENTIFIER', placeholder: 'ACCOUNT' },
+          { key: 'version', label: 'BACKUP VERSION', placeholder: 'VERSION' },
+          { key: 'time', label: 'ACCESS TIMESTAMP', placeholder: 'HH:MM:SS UTC' },
+        ],
+        formatHint: 'ACCOUNT | VERSION | HH:MM:SS UTC',
+        submitLabel: 'SUBMIT FINAL ANSWER',
+        successLines: ['INVESTIGATION REPORT VERIFIED', 'LEVEL 04 — COMPLETED'],
+      },
+      {
+        number: 5, title: 'The Silent Witness', difficulty: 'Hard', reward: 150, score: 200, maxAttempts: 8,
+        classification: 'WITNESS INVESTIGATION', answerType: 'witness', choices: ['1', '2', '3', '4'],
+        description: 'A golden figure keeps watch over those who come to learn. At his feet: the final witness recording.',
+        briefing: 'Which witness is lying?', evidence: '',
+        sections: [
+          { heading: 'Intelligence report', document: [
+            'Seek the man who turned vision into reality and dreams into structures.',
+            'He stands unmoving while generations pass, a golden figure watching over those who come to learn.',
+            'Where wisdom meets ambition, find the silent guardian. Your next secret awaits at his feet.',
+          ] },
+          { code: 'RECOVER THE FINAL WITNESS RECORDING' },
+          { heading: 'Witness interrogation', body: [
+            'A mysterious man was reportedly seen inside a building on a particular day.',
+            'Four witnesses claim to have seen him, but their statements don’t all match the available evidence.',
+            'The participants receive a video containing four witness interviews and a series of visual clues.',
+            'Their task is to identify which witness is lying by analyzing the evidence rather than guessing.',
+          ] },
+          // Set the URL once the recording is ready (empty = no player; the QR at the location is the main route).
+          { video: { title: 'Witness recording', url: '' } },
+        ],
+        question: 'Which witness is lying?',
+        submitLabel: 'SUBMIT FINAL VERDICT',
+        successLines: ['FINAL VERDICT ACCEPTED', 'LEVEL 05 — COMPLETED'],
       },
     ],
   },

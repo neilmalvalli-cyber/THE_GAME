@@ -54,7 +54,7 @@ export function createAssets(renderer, count = 5, cases = null) {
       coverOuter: makeCoverOuter(id, seed, cases?.[id - 1]?.title ?? ''),
       coverInner: makeCoverInner(id, seed),
       tabLabel: makeTabLabel(id, seed),
-      polaroids: [0, 1, 2, 3].map((i) => makePolaroid(i, seed + i * 31, i + id)),
+      polaroids: Array.from({ length: Math.max(4, cases?.[id - 1]?.levels?.length ?? 4) }, (_, i) => makePolaroid(i, seed + i * 31, i + id)),
     };
     [set.coverOuter, set.coverInner, ...set.polaroids].forEach((t) => { t.anisotropy = aniso; });
     perFolder.push(set);

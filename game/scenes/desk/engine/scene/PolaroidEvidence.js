@@ -2,15 +2,25 @@ import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { rng, stampVerified } from './textures.js';
 
-// Four loose instant photos lying on the right-hand page of an open file.
+// Loose instant photos (one per level) lying on the right-hand page of an open file.
 // Positions are folder-local (back panel spans x ∈ [-1.15, 1.15], z ∈ [-1.5, 1.5]).
 const PHOTO = { w: 0.86, d: 1.035, t: 0.006 };
-const LAYOUT = [
-  { x: -0.5, z: -0.66, ry: 0.07 },
-  { x: 0.52, z: -0.7, ry: -0.05 },
-  { x: -0.47, z: 0.62, ry: -0.09 },
-  { x: 0.53, z: 0.66, ry: 0.04 },
-];
+const LAYOUTS = {
+  4: [
+    { x: -0.5, z: -0.66, ry: 0.07 },
+    { x: 0.52, z: -0.7, ry: -0.05 },
+    { x: -0.47, z: 0.62, ry: -0.09 },
+    { x: 0.53, z: 0.66, ry: 0.04 },
+  ],
+  // five investigations: two rows of two plus one across the bottom (slightly smaller, overlapping)
+  5: [
+    { x: -0.5, z: -0.88, ry: 0.07, s: 0.84 },
+    { x: 0.52, z: -0.9, ry: -0.05, s: 0.84 },
+    { x: -0.49, z: 0.12, ry: -0.08, s: 0.84 },
+    { x: 0.53, z: 0.1, ry: 0.05, s: 0.84 },
+    { x: 0.02, z: 0.98, ry: -0.03, s: 0.84 },
+  ],
+};
 
 export class PolaroidEvidence {
   /**
@@ -28,7 +38,8 @@ export class PolaroidEvidence {
     const geo = new THREE.BoxGeometry(PHOTO.w, PHOTO.t, PHOTO.d);
     const r = rng(seed);
     // stacking order varies per file so overlaps look natural
-    const order = [0, 1, 2, 3].sort(() => r() - 0.5);
+    const LAYOUT = LAYOUTS[fronts.length] ?? LAYOUTS[4];
+    const order = LAYOUT.map((_, i) => i).sort(() => r() - 0.5);
     LAYOUT.forEach((L, i) => {
       const front = new THREE.MeshStandardMaterial({ map: fronts[i], roughness: 0.42, metalness: 0, bumpMap, bumpScale: 0.25 });
       const mesh = new THREE.Mesh(geo, [edgeMat, edgeMat, front, backMat, edgeMat, edgeMat]);
@@ -49,7 +60,7 @@ export class PolaroidEvidence {
         shadow.renderOrder = 1;
         this.group.add(shadow);
       }
-      this.items.push({ mesh, base, offset, shift, front, lift, shadow, paperY: baseY });
+      this.items.push({ mesh, base, offset, shift, front, lift, shadow, paperY: baseY, size: L.s ?? 1 });
       this.group.add(mesh);
     });
     this.apply();
@@ -59,7 +70,7 @@ export class PolaroidEvidence {
     for (const it of this.items) {
       it.mesh.position.set(it.base.x + it.offset.x, it.base.y + it.lift.y, it.base.z + it.offset.z + it.lift.z);
       it.mesh.rotation.set(it.lift.rx, it.base.ry + it.offset.ry, 0, 'YXZ');
-      it.mesh.scale.setScalar(it.lift.s);
+      it.mesh.scale.setScalar(it.lift.s * it.size);
       if (it.shadow) {
         const h = it.lift.y;
         it.shadow.position.set(it.base.x + it.offset.x + h * 0.45, it.paperY + 0.0012 + h * 0.02, it.base.z + it.offset.z + it.lift.z + h * 0.3);

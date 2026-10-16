@@ -12,7 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const load = (p) => import(pathToFileURL(resolve(root, p)).href);
 const { CASES, LEVEL_SCORE, CASE_FRAGMENT_LENGTH } = await load('game/data/cases.ts');
-const { ANSWERS, HINTS, UNLOCK_CODE } = await load('game/data/secrets.ts');
+const { ANSWERS, HINTS, UNLOCK_CODE, DEBRIEFS = {} } = await load('game/data/secrets.ts');
 const { CATALOG, BLACK_MARKET_DISCOUNT, STARTING_COINS } = await load('game/data/market.ts');
 
 const q = (s) => (s == null ? 'NULL' : `'${String(s).replace(/'/g, "''")}'`);
@@ -34,7 +34,9 @@ for (const c of CASES) {
   for (const l of c.levels) {
     const key = `${c.id}-${l.number}`;
     if (!ANSWERS[key]) problems.push(`no answer for case ${c.id} level ${l.number} (ANSWERS['${key}'])`);
-    levels.push({ c, l, answer: ANSWERS[key] ?? '', hint: HINTS[key] ?? null, points: l.score ?? LEVEL_SCORE[l.number] ?? 0 });
+    if (l.answerType === 'fields' && (ANSWERS[key] ?? '').split('|').length !== (l.fields?.length ?? 0)) problems.push(`case ${c.id} level ${l.number}: the answer needs ${l.fields?.length} parts separated by "|"`);
+    levels.push({ c, l, answer: ANSWERS[key] ?? '', hint: HINTS[key] ?? null, points: l.score ?? LEVEL_SCORE[l.number] ?? 0,
+      mode: l.answerType === 'fields' || l.answerType === 'witness' ? l.answerType : 'game', max: l.maxAttempts ?? null, debrief: DEBRIEFS[key] ?? null });
   }
 }
 if (problems.length) {
@@ -70,12 +72,16 @@ for (const c of CASES) {
   ELSE
     UPDATE challenges SET title = ${q(c.title)}, status = 'published', final_fragment = ${q(fragments[c.id])}, fragment_order = ${c.id} WHERE id = v_challenge;
   END IF;`);
-  for (const { l, answer, hint, points } of levels.filter((x) => x.c === c)) {
-    out.push(`  INSERT INTO challenge_levels (challenge_id, level_number, title, prompt, answer, answer_mode, hint_text, points_reward, coins_reward, status)
-  VALUES (v_challenge, ${l.number}, ${q(l.title)}, ${q(l.briefing)}, ${q(answer)}, 'game', ${q(hint)}, ${points}, ${l.reward}, 'published')
+  for (const { l, answer, hint, points, mode, max, debrief } of levels.filter((x) => x.c === c)) {
+    const att = debrief ? `'${JSON.stringify({ debrief }).replace(/'/g, "''")}'::jsonb` : `'[]'::jsonb`;
+    out.push(`  INSERT INTO challenge_levels (challenge_id, level_number, title, prompt, answer, answer_mode, hint_text, points_reward, coins_reward, max_attempts, attachments, status)
+  VALUES (v_challenge, ${l.number}, ${q(l.title)}, ${q(l.briefing)}, ${q(answer)}, ${q(mode)}, ${q(hint)}, ${points}, ${l.reward}, ${max ?? 'NULL'}, ${att}, 'published')
   ON CONFLICT (challenge_id, level_number) DO UPDATE SET title = EXCLUDED.title, prompt = EXCLUDED.prompt, answer = EXCLUDED.answer,
-    answer_mode = 'game', hint_text = EXCLUDED.hint_text, points_reward = EXCLUDED.points_reward, coins_reward = EXCLUDED.coins_reward, status = 'published';`);
+    answer_mode = EXCLUDED.answer_mode, hint_text = EXCLUDED.hint_text, points_reward = EXCLUDED.points_reward, coins_reward = EXCLUDED.coins_reward,
+    max_attempts = EXCLUDED.max_attempts, attachments = EXCLUDED.attachments, status = 'published';`);
   }
+  // levels removed from the case (e.g. a case shrank) are hidden, never deleted (progress may point at them)
+  out.push(`  UPDATE challenge_levels SET status = 'draft' WHERE challenge_id = v_challenge AND level_number > ${c.levels.length};`);
 }
 out.push(`END $$;
 

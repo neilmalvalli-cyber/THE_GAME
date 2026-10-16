@@ -114,3 +114,42 @@
 .powerups h2 { flex-basis: 100%; }
 .powerups__hint { margin: 0; padding: 10px 12px; border-left: 3px solid #b8892f; background: rgba(184, 137, 47, 0.1); line-height: 1.5; }
 .powerups__confirm { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* ---- investigation pages (sections, evidence table, fields, witnesses, attempts) ---- */
+.dossier__class { color: #b3282b; letter-spacing: .14em; }
+.dossier__meta dd.is-locked { color: #e07a6a; }
+.classified-doc { position: relative; margin: 0; padding: 18px 20px; background: rgba(236, 228, 214, .06); border-left: 3px solid #b3282b; font: 400 15px/1.65 'Special Elite', 'IBM Plex Mono', monospace; }
+.classified-doc p { margin: 0 0 10px; } .classified-doc p:last-child { margin: 0; }
+.classified-doc__stamp { position: absolute; top: 8px; right: 12px; padding: 2px 8px; border: 2px solid rgba(179,40,43,.7); color: rgba(179,40,43,.85); font: 700 11px/1.2 'Stardos Stencil', serif; letter-spacing: .2em; transform: rotate(4deg); }
+.level-sec__p { margin: 0 0 10px; line-height: 1.6; }
+.level-sec__list { margin: 0; padding-left: 20px; line-height: 1.6; }
+.level-sec__code { margin: 0; font: 500 12.5px/1.4 'IBM Plex Mono', monospace; letter-spacing: .14em; }
+.level-sec--warning .level-sec__code { color: #e07a6a; }
+.level-sec--note { border-left: 2px solid rgba(226,183,122,.6); padding-left: 14px; }
+.evidence-table { margin: 0; padding: 14px 16px; background: #0d0c0b; border: 1px solid rgba(255,255,255,.1); border-radius: 3px; font-family: 'IBM Plex Mono', monospace; }
+.evidence-table figcaption { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; } .evidence-table figcaption b { color: #ece4d6; letter-spacing: .18em; } .evidence-table figcaption span { color: #e07a6a; font-size: 11.5px; letter-spacing: .12em; }
+.evidence-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.evidence-table th, .evidence-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.08); }
+.evidence-table th { color: rgba(236,228,214,.55); font-weight: 500; letter-spacing: .1em; }
+.level-sec__link { display: inline-flex; text-decoration: none; }
+.level-sec__video video { width: 100%; max-height: 360px; background: #000; border-radius: 3px; }
+.answer__format { margin: -4px 0 10px; font-size: 12px; color: rgba(236,228,214,.6); } .answer__format code { font-family: 'IBM Plex Mono', monospace; }
+.answer__row--stack { flex-direction: column; align-items: stretch; }
+.answer__fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.answer__field { display: flex; flex-direction: column; gap: 4px; font: 500 10.5px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; color: rgba(236,228,214,.6); }
+@media (max-width: 640px) { .answer__fields { grid-template-columns: 1fr; } }
+.answer__witnesses { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 640px) { .answer__witnesses { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.witness-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px; cursor: pointer;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.12); border-radius: 4px; transition: border-color .2s, background .2s, transform .2s; }
+.witness-card input { position: absolute; opacity: 0; pointer-events: none; }
+.witness-card:hover { border-color: rgba(232,220,203,.35); }
+.witness-card.is-on { border-color: #b3282b; background: rgba(179,40,43,.12); transform: translateY(-2px); }
+.witness-card__label { font: 500 10px/1 'IBM Plex Mono', monospace; letter-spacing: .24em; color: rgba(236,228,214,.55); }
+.witness-card__no { font: 700 26px/1 'Stardos Stencil', serif; }
+.answer__locked { margin: 10px 0 0; color: #e07a6a; font: 500 12px/1.5 'IBM Plex Mono', monospace; letter-spacing: .06em; }
+.answer__done { margin: 10px 0 0; color: #8fc28a; font: 500 12px/1.5 'IBM Plex Mono', monospace; letter-spacing: .14em; }
+.answer__debrief { margin-top: 10px; padding: 12px 14px; border: 1px solid rgba(143,194,138,.35); background: rgba(143,194,138,.06); border-radius: 3px; font: 400 13px/1.55 'IBM Plex Mono', monospace; }
+.answer__debrief p { margin: 0 0 6px; } .answer__debrief p:last-child { margin: 0; }
+.case-solved__line { margin-top: 6px; font: 500 12px/1.4 'IBM Plex Mono', monospace; letter-spacing: .18em; color: #8fc28a; }
+@media (prefers-reduced-motion: reduce) { .witness-card { transition: none; } .witness-card.is-on { transform: none; } }
