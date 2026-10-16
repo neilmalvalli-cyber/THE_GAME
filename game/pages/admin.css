@@ -91,3 +91,4 @@
 .composer textarea { height: auto; padding: 10px 12px; line-height: 1.5; resize: vertical; }
 .composer__actions { display: flex; gap: 10px; }
 @media (max-width: 760px) { .case-row { grid-template-columns: 80px 1fr; } }
+.ops-card--wide { margin-top: 16px; }

@@ -11,7 +11,7 @@ import { paths } from '../orchestration/routes';
 import { useAuth, logoutAdmin } from '../services/auth';
 import { useTeams, type TeamSummary } from '../services/teams';
 import { ADMIN_MAIL_TYPES, BODY_MAX, SUBJECT_MAX, deliveryStatus, newDraftId, refreshSentRemote, sendMessage, sendMessageRemote, useOutbox, type AdminMailType } from '../services/mail';
-import { adminSetMarket, adminSyncMarket, isServerBackend } from '../services/backend';
+import { adminMiniGame, adminSetMarket, adminSyncMarket, isServerBackend, type AdminMiniGame } from '../services/backend';
 import {
   activateBlackMarket, closeNormalMarket, deactivateBlackMarket, openNormalMarket,
   useMarketStore, MARKET_EVENT_LABEL,
@@ -220,6 +220,52 @@ const CONFIRM: Record<Action, { title: string; body: string; ok: string } | null
 };
 const RUN: Record<Action, () => boolean> = { shutdown: closeNormalMarket, reopen: openNormalMarket, activate: activateBlackMarket, deactivate: deactivateBlackMarket };
 
+/** Surprise mini-game (Supabase backend): the payout an armed Overclock doubles. */
+function MiniGameOps() {
+  const [game, setGame] = useState<AdminMiniGame | null>(null);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [coins, setCoins] = useState(30);
+  const [minutes, setMinutes] = useState(5);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const refresh = async () => { const r = await adminMiniGame({ action: 'status' }); if (r.ok) setGame(r.game ?? null); };
+  useEffect(() => { void refresh(); const t = window.setInterval(() => { void refresh(); }, 4000); return () => window.clearInterval(t); }, []);
+  const act = async (input: Parameters<typeof adminMiniGame>[0]) => {
+    setBusy(true); setMsg(null);
+    try {
+      const r = await adminMiniGame(input);
+      if (!r.ok) { setMsg(r.message ?? 'Could not do that.'); return; }
+      if (input.action === 'launch') { setQuestion(''); setAnswer(''); setMsg('Mini-game launched. Teams see it within a few seconds.'); }
+      await refresh();
+    } finally { setBusy(false); }
+  };
+  return (
+    <article className="ops-card ops-card--wide" data-testid="minigame-ops">
+      <header className="ops-card__head">
+        <span className="ops-card__name">Surprise Mini-game</span>
+        <span className={`ops-status ops-status--${game ? 'live' : 'idle'}`}><span className="ops-status__dot" />{game ? 'Live' : 'None'}</span>
+      </header>
+      {game ? (
+        <>
+          <p className="ops-card__text">“{game.question}” · {game.coins} coins · {game.solvedBy} team{game.solvedBy === 1 ? '' : 's'} solved · ends {new Date(game.endsAt).toLocaleTimeString()}</p>
+          <button type="button" className="btn" disabled={busy} onClick={() => act({ action: 'end' })}>End mini-game</button>
+        </>
+      ) : (
+        <form className="composer" onSubmit={(e) => { e.preventDefault(); void act({ action: 'launch', question, answer, coins, minutes }); }}>
+          <p className="ops-card__text">Each team's first correct answer pays the reward — doubled for teams with an armed Overclock.</p>
+          <label className="composer__field"><span>Question</span><input value={question} maxLength={500} onChange={(e) => setQuestion(e.target.value)} /></label>
+          <label className="composer__field"><span>Answer</span><input value={answer} maxLength={200} onChange={(e) => setAnswer(e.target.value)} /></label>
+          <label className="composer__field"><span>Reward (coins)</span><input type="number" min={1} max={1000} value={coins} onChange={(e) => setCoins(Number(e.target.value))} /></label>
+          <label className="composer__field"><span>Time limit (minutes)</span><input type="number" min={1} max={120} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} /></label>
+          <div className="composer__actions"><button type="submit" className="btn btn--primary" disabled={busy || !question.trim() || !answer.trim()}>Launch mini-game</button></div>
+        </form>
+      )}
+      {msg && <p className="ops__flash" role="status">{msg}</p>}
+    </article>
+  );
+}
+
 function MarketOps() {
   const normal = useMarketStore((s) => s.normalMarketStatus);
   const black = useMarketStore((s) => s.blackMarketStatus);
@@ -257,6 +303,7 @@ function MarketOps() {
             : <button type="button" className="btn" onClick={() => request('deactivate')}>Deactivate Black Market</button>}
         </article>
       </div>
+      {isServerBackend && <MiniGameOps />}
       {flash && <p className="ops__flash" role="status">{flash}</p>}
       {confirm && CONFIRM[confirm] && <ConfirmDialog {...CONFIRM[confirm]!} onCancel={() => setConfirm(null)} onConfirm={() => run(confirm)} />}
     </section>

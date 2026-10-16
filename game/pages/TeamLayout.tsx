@@ -19,6 +19,7 @@ import { connectSabotage } from '../services/sabotage';
 import { connectTeamSync, isServerBackend } from '../services/backend';
 import { SabotageLayer } from '../ui/SabotageLayer';
 import { PerfOverlay } from '../perf/PerfOverlay';
+import { MiniGameBanner } from '../ui/MiniGameBanner';
 import './team.css';
 import { env } from '../env';
 
@@ -68,6 +69,7 @@ function TeamShell() {
       <MailNotifier />
       <SabotageLayer />
       <PerfOverlay />
+      {isServerBackend && <MiniGameBanner />}
       {DevPanel && <Suspense fallback={null}><DevPanel /></Suspense>}
     </div>
   );

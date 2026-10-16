@@ -10,6 +10,7 @@ $P -d $DB -c "CREATE EXTENSION IF NOT EXISTS pgcrypto" >/dev/null
 $P -d $DB -f supabase/tests/supabase_stub.sql >/dev/null
 $P -d $DB -f supabase/FULL_SCHEMA.sql >/dev/null 2>&1
 $P -d $DB -f supabase/migrations/004_the_game.sql >/dev/null
+$P -d $DB -f supabase/migrations/005_minigame.sql >/dev/null
 node --no-warnings scripts/generate-seed.mjs >/dev/null
 $P -d $DB -f supabase/seed/the_game_seed.sql >/dev/null
 $P -d $DB -f supabase/tests/game_test.sql 2>&1 | grep -E "PASS|FAIL|ERROR"

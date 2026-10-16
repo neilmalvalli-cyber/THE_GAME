@@ -1,0 +1,11 @@
+.minigame { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 60; width: min(440px, calc(100vw - 32px));
+  background: rgba(14, 12, 11, .95); border: 1px solid rgba(226, 183, 122, .45); border-radius: 6px; box-shadow: 0 12px 40px rgba(0,0,0,.6); color: var(--text, #ece4d6); }
+.minigame__head { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; background: none; border: 0; color: inherit; cursor: pointer; text-align: left; }
+.minigame__kicker { font: 600 10.5px/1 var(--font-ui, Inter, sans-serif); letter-spacing: .28em; text-transform: uppercase; color: #e2b77a; }
+.minigame__meta { font: 500 12px/1 'IBM Plex Mono', monospace; color: rgba(236,228,214,.75); }
+.minigame__body { padding: 0 14px 14px; }
+.minigame__q { margin: 0 0 10px; font: 400 15px/1.45 'Special Elite', 'IBM Plex Mono', monospace; }
+.minigame__form { display: flex; gap: 8px; }
+.minigame__form input { flex: 1; min-width: 0; padding: 8px 10px; font: 14px 'IBM Plex Mono', monospace; color: inherit; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.18); border-radius: 4px; }
+.minigame__note { margin: 8px 0 0; font-size: 12.5px; color: #e07a6a; }
+.minigame__note.is-ok { color: #9fd49a; }

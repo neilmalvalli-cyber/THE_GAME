@@ -23,7 +23,7 @@ A 3D investigation game: six case files on a detective's desk, a Normal Market a
 
 ## Deploy
 
-1. Supabase SQL editor, in order: `supabase/FULL_SCHEMA.sql`, `supabase/migrations/004_the_game.sql`, then your generated `supabase/seed/the_game_seed.sql`.
+1. Supabase SQL editor, in order: `supabase/FULL_SCHEMA.sql`, `supabase/migrations/004_the_game.sql`, `supabase/migrations/005_minigame.sql`, then your generated `supabase/seed/the_game_seed.sql`.
 2. Set `ADMIN_PASSWORD` in `.env.local` (server-only). The Admin Login asks for this password only;
    the first correct login creates the admin account in Supabase automatically.
 3. Copy `.env.example` to `.env.local` (or set them in Vercel) with your project's URL and keys, `NEXT_PUBLIC_GAME_BACKEND=supabase`.
@@ -50,4 +50,5 @@ Every action goes through `actions/game.ts`, which finds the caller's team from 
 - **Fragments** of the phone code are returned only for cases a team has solved; the code is verified on the server.
 - **Markets**: the admin switches them (`game_admin_set_market`); prices, stock limits and market state are enforced on every purchase.
 - **Power-ups**: Skip Token, Master Key (once per team, unsolved cases only), Powerful Hint, Overclock (doubles the next mini-game payout via `game_minigame_reward`), Firewall, Glitch Attack and Freeze (60 s, resolved atomically; a Firewall blocks one attack).
+- **Surprise mini-games**: the admin launches one from Market Operations (question, answer, coins, time limit); each team's first correct answer pays, doubled once by an armed Overclock.
 - **Mail**: admin messages and sabotage notices are stored in `game_messages`; teams pick them up on their next sync (every 4 s and on focus).

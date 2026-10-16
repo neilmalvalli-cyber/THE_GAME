@@ -203,7 +203,18 @@ export async function gameSession(): Promise<GameResult<{ team: TeamIdentity | n
 
 export async function gameState(since?: string | null) {
   const t = await requireTeam(); if (!t.ok) return t
-  return rpc('game_state', { p_team: t.teamId, p_since: since ?? null })
+  const [state, minigame] = await Promise.all([
+    rpc<Record<string, unknown>>('game_state', { p_team: t.teamId, p_since: since ?? null }),
+    rpc('game_minigame_for', { p_team: t.teamId }),
+  ])
+  if (!state.ok) return state
+  return { ok: true as const, value: { ...state.value, minigame: minigame.ok ? minigame.value : null } }
+}
+
+/** Answer the live surprise mini-game (coins doubled once by an armed Overclock). */
+export async function gameMinigameAnswer(input: { answer: string }) {
+  const t = await requireTeam(); if (!t.ok) return t
+  return rpc('game_minigame_answer', { p_team: t.teamId, p_user: t.userId, p_answer: String(input?.answer ?? '').slice(0, 200) })
 }
 
 export async function gameSubmit(input: { caseId: number; level: number; answer: string }) {
@@ -301,6 +312,26 @@ export async function gameAdminSend(input: { draftId: string; to: 'all' | string
     p_user: a.userId, p_key: String(input.draftId).slice(0, 80), p_to: input.to === 'all' ? null : input.to,
     p_subject: subject, p_body: body, p_kind: type, p_category: MAIL_TYPES[type].category, p_sender: MAIL_TYPES[type].sender,
   })
+}
+
+export async function gameAdminMinigame(input: { action: 'status' | 'launch' | 'end'; question?: string; answer?: string; coins?: number; minutes?: number }) {
+  const a = await requireAdmin(); if (!a.ok) return a
+  if (input?.action === 'launch') {
+    return rpc('game_minigame_launch', {
+      p_user: a.userId, p_question: String(input.question ?? '').slice(0, 500), p_answer: String(input.answer ?? '').slice(0, 200),
+      p_coins: Math.round(Number(input.coins) || 0), p_minutes: Math.round(Number(input.minutes) || 0),
+    })
+  }
+  if (input?.action === 'end') return rpc('game_minigame_end', { p_user: a.userId })
+  const db = createAdminClient()
+  const { data: event } = await db.rpc('game_event')
+  if (!event) return fail('No live event.')
+  const { data } = await db.from('surprise_events').select('id, question_text, coins_reward, ends_at, status')
+    .eq('event_id', event).eq('status', 'live').eq('configuration->>kind', 'game_minigame').gt('ends_at', new Date().toISOString())
+    .order('starts_at', { ascending: false }).limit(1).maybeSingle()
+  if (!data) return { ok: true as const, value: null }
+  const { count } = await db.from('surprise_submissions').select('id', { count: 'exact', head: true }).eq('surprise_event_id', data.id)
+  return { ok: true as const, value: { id: data.id, question: data.question_text, coins: data.coins_reward, endsAt: new Date(data.ends_at).getTime(), solvedBy: count ?? 0 } }
 }
 
 export async function gameAdminSent() {

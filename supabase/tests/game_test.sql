@@ -104,3 +104,15 @@ SELECT pg_temp.ok((SELECT NOT EXISTS (SELECT 1 FROM jsonb_array_elements(game_st
 -- access
 SELECT pg_temp.ok(NOT has_function_privilege('authenticated', 'game_purchase(uuid, uuid, text, text, text)', 'EXECUTE')
   AND NOT has_function_privilege('anon', 'game_state(uuid, timestamptz)', 'EXECUTE'), 'browsers cannot call game functions directly');
+
+-- surprise mini-game (005)
+SELECT pg_temp.ok((game_minigame_launch('00000000-0000-0000-0000-00000000000a', 'Six times seven?', '42', 20, 5)->>'ok')::boolean, 'admin launches a mini-game');
+SELECT pg_temp.ok((SELECT game_minigame_for(a) ? 'question' AND NOT (game_minigame_for(a) ? 'answer') FROM t), 'teams see the question, never the answer');
+SELECT pg_temp.ok((SELECT game_minigame_answer(a, '00000000-0000-0000-0000-00000000000a', '41')->>'wrong' FROM t) = 'true', 'mini-game: wrong answer refused');
+INSERT INTO game_inventory (team_id, catalog_id, qty) SELECT a, 'overclock', 1 FROM t ON CONFLICT (team_id, catalog_id) DO UPDATE SET qty = game_inventory.qty + 1;
+SELECT game_arm_overclock(a) FROM t;
+SELECT pg_temp.ok((SELECT (game_minigame_answer(a, '00000000-0000-0000-0000-00000000000a', '42')->>'coins')::int FROM t) = 40, 'mini-game pays double with Overclock armed');
+SELECT pg_temp.ok((SELECT (game_minigame_answer(b, '00000000-0000-0000-0000-00000000000b', '42')->>'coins')::int FROM t) = 20, 'mini-game pays normally without Overclock');
+SELECT pg_temp.ok((SELECT game_minigame_answer(a, '00000000-0000-0000-0000-00000000000a', '42')->>'ok' FROM t) = 'false', 'one payout per team');
+SELECT game_minigame_end('00000000-0000-0000-0000-00000000000a');
+SELECT pg_temp.ok((SELECT game_minigame_for(a) IS NULL FROM t), 'ended mini-game disappears');

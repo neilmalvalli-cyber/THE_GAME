@@ -27,6 +27,28 @@ const msMap = (o: unknown) => Object.fromEntries(Object.entries((o ?? {}) as Rec
 // ---------------------------------------------------------------- rivals (for sabotage)
 export const useRivals = create<{ rivals: { id: string; name: string }[] }>()(() => ({ rivals: [] }));
 
+// ---------------------------------------------------------------- surprise mini-game (supabase)
+export interface MiniGame { id: string; question: string; coins: number; endsAt: number; solved: boolean; solvedBy: number }
+export const useMiniGame = create<{ game: MiniGame | null }>()(() => ({ game: null }));
+
+export async function answerMiniGame(answer: string): Promise<{ ok: boolean; message: string }> {
+  const r = await server.gameMinigameAnswer({ answer });
+  if (!r.ok) return { ok: false, message: r.error };
+  const v = r.value as Raw;
+  await syncTeam();
+  return { ok: !!v.ok, message: String(v.message ?? FAIL) };
+}
+
+export interface AdminMiniGame { id: string; question: string; coins: number; endsAt: number; solvedBy: number }
+export async function adminMiniGame(input: { action: 'status' | 'launch' | 'end'; question?: string; answer?: string; coins?: number; minutes?: number }):
+  Promise<{ ok: boolean; message?: string; game?: AdminMiniGame | null }> {
+  const r = await server.gameAdminMinigame(input);
+  if (!r.ok) return { ok: false, message: r.error };
+  if (input.action === 'status') return { ok: true, game: (r.value as AdminMiniGame | null) ?? null };
+  const v = (r.value ?? {}) as Raw;
+  return { ok: !!v.ok, message: v.message ? String(v.message) : undefined };
+}
+
 // ---------------------------------------------------------------- sync (supabase)
 let lastMessageAt: string | null = null;
 let sessionLost: (() => void) | null = null;
@@ -89,6 +111,7 @@ function applyState(st: Raw) {
     if (!lastMessageAt || String(m.at) > lastMessageAt) lastMessageAt = String(m.at);
   }
   useRivals.setState({ rivals: (st.rivals ?? []) as { id: string; name: string }[] });
+  useMiniGame.setState({ game: (st.minigame ?? null) as MiniGame | null });
 }
 
 /** Pull the team's state from the server into this browser. */
