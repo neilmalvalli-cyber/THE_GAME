@@ -23,7 +23,6 @@ export function RoleSelect() {
   const [mode, setMode] = useState<TeamMode>('create');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const [adminEmail, setAdminEmail] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -75,7 +74,7 @@ export function RoleSelect() {
     setBusy(true);
     setError(null);
     try {
-      const r = await loginAdmin(password, adminEmail);
+      const r = await loginAdmin(password);
       if (!r.ok) { setError(r.error); return; }
       navigate(paths.admin);
     } finally { setBusy(false); }
@@ -138,13 +137,8 @@ export function RoleSelect() {
         {view === 'admin' && (
           <form className="auth auth--admin" onSubmit={submitAdmin} noValidate aria-label="Admin login">
             <h1 className="auth__title">Admin Login</h1>
-            {isServerBackend && (
-              <label className="auth__field"><span>Admin e-mail</span>
-                <input name="admin-email" type="email" autoComplete="username" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} autoFocus required />
-              </label>
-            )}
             <label className="auth__field"><span>Admin password</span>
-              <input name="admin-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus={!isServerBackend} required />
+              <input name="admin-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus required />
             </label>
             {error && <p className="auth__error" role="alert">{error}</p>}
             <div className="auth__actions">

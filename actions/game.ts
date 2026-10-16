@@ -8,7 +8,7 @@
 // Teams log in with a team name + password. Each team is one Supabase auth user whose
 // e-mail is internal (`<uuid>@TEAM_LOGIN_DOMAIN`) and never shown or mailed.
 
-import { randomUUID } from 'crypto'
+import { randomUUID, timingSafeEqual } from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateTeamCode } from '@/lib/constants'
@@ -131,10 +131,49 @@ export async function gameLoginTeam(input: { name: string; password: string }): 
   return { ok: true, value: identity(team) }
 }
 
-export async function gameLoginAdmin(input: { email: string; password: string }): Promise<GameResult<true>> {
+/** Constant-time string comparison (no early exit on the first differing character). */
+function sameSecret(a: string, b: string) {
+  const x = Buffer.from(a), y = Buffer.from(b)
+  return x.length === y.length && timingSafeEqual(x, y)
+}
+
+/**
+ * Admin login. The website asks for a password only: it is checked HERE, on the server,
+ * against ADMIN_PASSWORD (.env.local, never sent to browsers). The first correct login
+ * creates the admin's Supabase account (ADMIN_EMAIL, default admin@TEAM_LOGIN_DOMAIN) with
+ * the admin role, and keeps its password in step with ADMIN_PASSWORD. Other admins can
+ * still sign in with their own e-mail + password.
+ */
+export async function gameLoginAdmin(input: { email?: string; password: string }): Promise<GameResult<true>> {
+  const password = String(input?.password ?? '')
+  const shared = process.env.ADMIN_PASSWORD || ''
+  let email = String(input?.email ?? '').trim()
+  if (!email) {
+    if (!shared) return fail('Admin login is not configured on this server (set ADMIN_PASSWORD in .env.local).')
+    if (!sameSecret(password, shared)) return fail('Incorrect admin password.')
+    email = process.env.ADMIN_EMAIL || `admin@${LOGIN_DOMAIN}`
+    const db = createAdminClient()
+    // find or create the admin account, keep its password = ADMIN_PASSWORD, make sure it is an admin
+    let userId: string | null = null
+    for (let page = 1; page <= 20 && !userId; page++) {
+      const { data } = await db.auth.admin.listUsers({ page, perPage: 200 })
+      const users = data?.users ?? []
+      userId = users.find((u) => u.email?.toLowerCase() === email.toLowerCase())?.id ?? null
+      if (users.length < 200) break
+    }
+    if (!userId) {
+      const { data, error } = await db.auth.admin.createUser({ email, password: shared, email_confirm: true, user_metadata: { display_name: 'Admin', kind: 'admin' } })
+      if (error || !data.user) { console.error('[game] create admin:', error?.message); return fail('Could not create the admin account.') }
+      userId = data.user.id
+    } else {
+      await db.auth.admin.updateUserById(userId, { password: shared, email_confirm: true })
+    }
+    const { error: roleError } = await db.from('user_roles').upsert({ user_id: userId, role: 'admin' }, { onConflict: 'user_id' })
+    if (roleError) { console.error('[game] admin role:', roleError.message); return fail('Could not grant the admin role.') }
+  }
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email: String(input?.email ?? '').trim(), password: String(input?.password ?? '') })
-  if (error) return fail('Incorrect admin e-mail or password.')
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) return fail(input?.email ? 'Incorrect admin e-mail or password.' : 'Incorrect admin password.')
   const c = await caller()
   if (!c?.isAdmin) {
     await supabase.auth.signOut()

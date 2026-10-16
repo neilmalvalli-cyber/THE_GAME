@@ -1,6 +1,6 @@
 // End-to-end test against a REAL backend: the app built with NEXT_PUBLIC_GAME_BACKEND=supabase,
 // talking to Supabase (Auth + PostgREST + Postgres with migration 004 and the seed).
-//   BASE_URL=http://localhost:3000 ADMIN_EMAIL=… ADMIN_PASSWORD=… node scripts/e2e-supabase.mjs
+//   BASE_URL=http://localhost:3000 ADMIN_PASSWORD=… node scripts/e2e-supabase.mjs   (same value as the server's ADMIN_PASSWORD)
 // Needs the dev server (dev hooks drive the market and power-up calls through the real
 // server actions; the 3D scenes themselves are covered by scripts/e2e.mjs).
 import { chromium } from 'playwright';
@@ -8,9 +8,8 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
 const BASE = process.env.BASE_URL || 'http://localhost:3000';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-if (!ADMIN_EMAIL || !ADMIN_PASSWORD) { console.error('Set ADMIN_EMAIL and ADMIN_PASSWORD (an admin in user_roles).'); process.exit(2); }
+if (!ADMIN_PASSWORD) { console.error('Set ADMIN_PASSWORD (the server\'s ADMIN_PASSWORD).'); process.exit(2); }
 const { ANSWERS } = await import(pathToFileURL(resolve('game/data/secrets.ts')).href);
 
 const tag = Date.now().toString(36).slice(-5);
@@ -119,7 +118,6 @@ async function run() {
     // ------------------------------------------------------------ admin
     const adm = await openPage(browser);
     await openLogin(adm, 'Admin Login');
-    await adm.fill('input[name=admin-email]', ADMIN_EMAIL);
     await adm.fill('input[name=admin-password]', 'wrong');
     await adm.getByRole('button', { name: 'Login', exact: true }).click();
     await adm.locator('.auth__error').waitFor();
@@ -127,7 +125,7 @@ async function run() {
     await adm.fill('input[name=admin-password]', ADMIN_PASSWORD);
     await adm.getByRole('button', { name: 'Login', exact: true }).click();
     await adm.getByRole('button', { name: 'Market Operations' }).waitFor({ timeout: 30000 });
-    check('Admin signs in with a Supabase admin account', (await adm.evaluate(() => location.pathname)) === '/admin');
+    check('Admin signs in with the admin password (checked on the server)', (await adm.evaluate(() => location.pathname)) === '/admin');
 
     const b = await openPage(browser);
     await register(b, TEAM_B);

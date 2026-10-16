@@ -24,12 +24,12 @@ A 3D investigation game: six case files on a detective's desk, a Normal Market a
 ## Deploy
 
 1. Supabase SQL editor, in order: `supabase/FULL_SCHEMA.sql`, `supabase/migrations/004_the_game.sql`, then your generated `supabase/seed/the_game_seed.sql`.
-2. Create the admin: Supabase → Authentication → Add user (e-mail + password), then
-   `UPDATE user_roles SET role = 'admin' WHERE user_id = '<that user id>';`
+2. Set `ADMIN_PASSWORD` in `.env.local` (server-only). The Admin Login asks for this password only;
+   the first correct login creates the admin account in Supabase automatically.
 3. Copy `.env.example` to `.env.local` (or set them in Vercel) with your project's URL and keys, `NEXT_PUBLIC_GAME_BACKEND=supabase`.
 4. `npm install && npm run build && npm start` (or deploy to Vercel).
 
-Teams register with a **team name + password** (unique, case-insensitive). The admin signs in on the same screen with e-mail + password and gets the Admin dashboard (`/admin`) plus THE HUNT ops console (`/ops`).
+Teams register with a **team name + password** (unique, case-insensitive). The admin signs in on the same screen with the admin password and gets the Admin dashboard (`/admin`) plus THE HUNT ops console (`/ops`).
 
 ## Develop
 
