@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# THE GAME
+dist/
+test-results/
+screenshots/
+e2e-failure.png
+*.log
+!.env.development
+!.env.example
+
+# generated seed contains the answers
+supabase/seed/the_game_seed.sql

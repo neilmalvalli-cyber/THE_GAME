@@ -1,0 +1,155 @@
+/* THE GAME — phone intro. Ported verbatim from the original intro sequence. */
+
+.tg-stage *{box-sizing:border-box}
+.tg-stage,.tg-stage *{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.tg-stage ::selection{background:transparent}
+.tg-cam{pointer-events:none}
+.tg-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* camera */
+.tg-cam{position:absolute;inset:0;animation:tg-drift 17s ease-in-out infinite alternate}
+.tg-push{position:absolute;inset:0;transform-origin:640px 350px;transform:scale(1);transition:transform 5s cubic-bezier(.33,0,.25,1)}
+.s-pushed .tg-push{transform:scale(1.11) translateY(4px)}
+.tg-scene{position:absolute;inset:0;perspective:1300px;perspective-origin:640px 300px}
+.tg-plane{position:absolute;left:-360px;top:-380px;width:2000px;height:1700px;transform:rotateX(34deg)}
+.tg-plane3d{transform-style:preserve-3d;pointer-events:none}
+.tg-layer{position:absolute;left:0;top:0;width:2000px;height:1700px;pointer-events:none}
+
+/* depth of field */
+.tg-wood-far{filter:blur(3px);-webkit-mask-image:linear-gradient(180deg,#000 0px,#000 170px,transparent 420px);mask-image:linear-gradient(180deg,#000 0px,#000 170px,transparent 420px)}
+.tg-wood-dof{filter:blur(2.2px);opacity:0;transition:opacity 3s ease;-webkit-mask-image:radial-gradient(ellipse 330px 470px at 1000px 690px,transparent 55%,#000 100%);mask-image:radial-gradient(ellipse 330px 470px at 1000px 690px,transparent 55%,#000 100%)}
+.s-pushed .tg-wood-dof{opacity:1}
+
+/* lamp + grade on the table plane */
+.tg-lamp{background:radial-gradient(ellipse 1000px 760px at 820px 640px,rgba(255,168,92,.30),rgba(255,140,70,.10) 40%,transparent 72%);mix-blend-mode:screen}
+.tg-spec{background:radial-gradient(ellipse 520px 240px at 640px 380px,rgba(255,196,128,.15),transparent 70%);mix-blend-mode:screen}
+.tg-falloff{background:radial-gradient(ellipse 1050px 820px at 900px 700px,rgba(0,0,0,0) 30%,rgba(5,3,2,.62) 66%,rgba(3,2,1,.96) 100%)}
+
+/* light the screen throws onto the wood */
+.tg-glow{position:absolute;left:665px;top:210px;width:670px;height:960px;opacity:0;pointer-events:none}
+.tg-glow-home{background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(150,172,255,.22),rgba(150,172,255,.07) 38%,transparent 64%)}
+.tg-glow-call{background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(255,216,204,.20),rgba(255,120,110,.06) 40%,transparent 64%)}
+.tg-glow-home{opacity:1}
+.s-dim .tg-glow-home{opacity:0;transition:opacity .6s ease}
+.s-call .tg-glow-call{opacity:1;transition:opacity .14s ease-out}
+
+/* phone placement */
+.tg-at{position:absolute;left:865px;top:410px;width:270px;height:560px}
+.tg-wrapfill{position:absolute;inset:0}
+.tg-swalk,.tg-walk{transition:transform .25s ease-out}
+.tg-psoft{position:absolute;inset:0;border-radius:60px;background:rgba(0,0,0,.7);filter:blur(30px);opacity:.2;transform:translate(12px,18px) scale(1.01)}
+.tg-pshadow{position:absolute;inset:0;border-radius:44px;background:rgba(0,0,0,.86);filter:blur(9px);transform:translate(10px,16px);opacity:.86}
+.tg-pao{position:absolute;inset:0;border-radius:42px;background:rgba(0,0,0,.92);filter:blur(2.5px);transform:translate(1px,3px);opacity:1}
+.tg-rig{backface-visibility:hidden}
+
+/* phone body */
+.tg-edge{position:absolute;inset:0;border-radius:42px;background:linear-gradient(180deg,#1b1b1d,#09090a);transform:translateY(6px);box-shadow:0 1.5px 0 rgba(255,190,130,.10)}
+.tg-body{position:absolute;inset:0;border-radius:42px;padding:9px;background:linear-gradient(150deg,#4b4c50 0%,#1c1c1f 18%,#0e0e10 50%,#26262a 82%,#57585d 100%);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07),inset 0 0 0 3px #08080a}
+.tg-sidebtn{position:absolute;right:-2px;width:3px;border-radius:2px;background:linear-gradient(90deg,#1a1a1d,#3a3a3f)}
+.tg-rim{position:absolute;inset:0;border-radius:42px;pointer-events:none;opacity:0;transition:opacity .6s ease}
+.tg-rim-home{box-shadow:inset 0 0 0 1px rgba(170,190,255,.10),inset 0 0 12px rgba(170,190,255,.10);opacity:1}
+.tg-rim-call{box-shadow:inset 0 0 0 1px rgba(255,214,200,.10),inset 0 0 12px rgba(255,180,170,.10)}
+.s-dim .tg-rim-home{opacity:0}
+.s-call .tg-rim-call{opacity:1;transition:opacity .14s}
+.tg-screen{position:relative;width:100%;height:100%;border-radius:33px;overflow:hidden;background:#000}
+.tg-dimmer{position:absolute;inset:0;background:#000;opacity:0}
+.s-dim .tg-dimmer{animation:tg-sleep .6s forwards}
+.tg-call{position:absolute;inset:0;opacity:0}
+.s-call .tg-call{opacity:1;transition:opacity .14s ease-out}
+.tg-glass{position:absolute;left:-6px;top:-6px;right:-6px;bottom:-6px;pointer-events:none;background:linear-gradient(118deg,rgba(255,236,214,.14) 0%,rgba(255,236,214,.045) 22%,transparent 38%),radial-gradient(ellipse 140px 56px at 24% 9%,rgba(255,220,180,.16),transparent 70%),linear-gradient(180deg,transparent 72%,rgba(255,200,150,.05))}
+.tg-hole{position:absolute;top:11px;left:50%;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#050506;box-shadow:inset 0 0 0 1.5px #1d1d21}
+
+/* vibration */
+.s-buzz .tg-buzz{animation:tg-buzz .06s linear infinite}
+.s-buzz .tg-sbuzz{animation:tg-buzz-s .06s linear infinite}
+.s-buzz .tg-glass{animation:tg-glint .06s linear infinite}
+
+/* phone UI */
+.tg-ui{font-family:Figtree,system-ui,-apple-system,sans-serif;color:#fff}
+.tg-sb{position:absolute;top:0;left:0;right:0;height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px 0 26px;font-size:12.5px;font-weight:600;z-index:3}
+.tg-sbi{display:flex;gap:5px;align-items:center}
+.tg-home{position:absolute;inset:0;background:radial-gradient(circle at 18% 14%,#c0692c 0%,rgba(192,105,44,0) 46%),radial-gradient(circle at 88% 64%,#1e5361 0%,rgba(30,83,97,0) 56%),radial-gradient(circle at 46% 112%,#5d2032 0%,rgba(93,32,50,0) 62%),#141017}
+.tg-clock{position:absolute;top:56px;left:0;right:0;text-align:center}
+.tg-date{font-size:12.5px;font-weight:500;letter-spacing:.01em;opacity:.92}
+.tg-time{font-size:62px;font-weight:300;letter-spacing:-.02em;line-height:1;margin-top:4px}
+.tg-grid{position:absolute;top:200px;left:16px;right:16px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px;column-gap:6px}
+.tg-app{display:flex;flex-direction:column;align-items:center;gap:5px}
+.tg-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.28),inset 0 0 0 .5px rgba(255,255,255,.16)}
+.tg-lbl{font-size:9.5px;font-weight:500;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.tg-cal{display:flex;flex-direction:column;align-items:center;line-height:1}
+.tg-cal-d{font-size:8px;font-weight:700;color:#d63a28;letter-spacing:.05em}
+.tg-cal-n{font-size:21px;font-weight:400;color:#111;margin-top:2px}
+.tg-dots{position:absolute;bottom:104px;left:0;right:0;display:flex;justify-content:center;gap:6px}
+.tg-dots span{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.4)}
+.tg-dots span:first-child{background:#fff}
+.tg-dock{position:absolute;left:12px;right:12px;bottom:18px;height:72px;border-radius:26px;background:rgba(40,34,40,.42);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.14);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;justify-items:center}
+.tg-homebar{position:absolute;bottom:6px;left:50%;width:96px;margin-left:-48px;height:4px;border-radius:2px;background:rgba(255,255,255,.78)}
+
+.tg-callbg{position:absolute;inset:0;background:radial-gradient(ellipse 220px 200px at 50% 150px,rgba(122,24,24,.34),transparent 70%),linear-gradient(180deg,#0d0b0c 0%,#060606 100%)}
+.tg-avwrap{position:absolute;top:82px;left:50%;width:92px;height:92px;margin-left:-46px}
+.tg-av{position:relative;width:92px;height:92px;border-radius:50%;background:radial-gradient(circle at 50% 40%,#2c1716,#0c0808 75%);box-shadow:inset 0 0 0 1px rgba(232,220,203,.16);display:flex;align-items:center;justify-content:center}
+.tg-ring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 1px rgba(236,128,116,.5);opacity:0}
+.s-call .tg-ring{animation:tg-ring 1.7s ease-out infinite}
+.tg-ring2{animation-delay:.85s!important}
+.tg-name{position:absolute;top:196px;left:0;right:0;text-align:center;font-size:33px;font-weight:700;letter-spacing:.12em;color:#f6f0e7;padding-left:.12em}
+.tg-sub{position:absolute;top:243px;left:0;right:0;text-align:center;font-size:13px;font-weight:500;color:#aaa3a3;letter-spacing:.02em}
+.tg-quick{position:absolute;bottom:150px;left:40px;right:40px;display:flex;justify-content:space-between}
+.tg-q{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10.5px;color:#bdb6b6}
+.tg-actions{position:absolute;bottom:56px;left:32px;right:32px;display:flex;justify-content:space-between}
+.tg-act{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:11px;font-weight:500;color:#ddd7d7}
+.tg-circ{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+/* film layers */
+.tg-film{position:absolute;inset:0;pointer-events:none}
+.tg-beam{background:linear-gradient(125deg,rgba(255,190,120,.06) 0%,rgba(255,190,120,.015) 34%,transparent 55%)}
+.tg-vignette{background:radial-gradient(ellipse 75% 72% at 50% 52%,transparent 45%,rgba(0,0,0,.55) 85%,rgba(0,0,0,.86) 100%)}
+.tg-grade{background:linear-gradient(180deg,rgba(4,5,8,.5) 0%,rgba(4,5,8,0) 38%)}
+.tg-grain{position:absolute;left:-20px;top:-20px;opacity:.035;pointer-events:none}
+.tg-dust span{position:absolute;display:block;border-radius:50%;background:rgba(255,222,180,.85);filter:blur(.6px);opacity:0;animation-name:tg-dust;animation-timing-function:ease-in-out;animation-iteration-count:infinite}
+
+/* blackout & overlays */
+.tg-blackout{position:absolute;inset:0;background:#000;opacity:1;transition:opacity 1.5s ease;pointer-events:none}
+.s-lit .tg-blackout{opacity:0}
+.s-out .tg-blackout{opacity:1;transition:opacity 1s ease-in}
+.s-skip .tg-blackout{transition:opacity .45s ease-in}
+.tg-gate{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;font-family:'Barlow Condensed',Figtree,sans-serif}
+.tg-kicker{font-size:14px;letter-spacing:.38em;text-transform:uppercase;color:#8d8073;padding-left:.38em}
+.tg-begin{font-family:'Barlow Condensed',Figtree,sans-serif;font-size:20px;font-weight:500;letter-spacing:.42em;text-transform:uppercase;color:#efe6d8;background:transparent;border:1px solid rgba(232,220,203,.45);padding:14px 34px 14px 40px;min-height:52px;cursor:pointer;transition:background .25s,border-color .25s}
+.tg-begin:hover,.tg-begin:focus-visible{background:rgba(255,240,220,.07);border-color:rgba(232,220,203,.8);outline:none}
+.tg-quiet{font-family:'Barlow Condensed',Figtree,sans-serif;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:#9a8e80;background:none;border:0;min-height:44px;padding:0 14px;cursor:pointer}
+.tg-quiet:hover,.tg-quiet:focus-visible{color:#e6dccd;outline:none}
+.tg-skip{position:absolute;top:22px;right:24px;display:flex;align-items:center;gap:8px;font-family:'Barlow Condensed',Figtree,sans-serif;font-size:14px;letter-spacing:.22em;text-transform:uppercase;color:rgba(239,230,216,.62);background:rgba(0,0,0,.25);border:1px solid rgba(239,230,216,.18);border-radius:999px;min-height:44px;padding:0 18px 0 20px;cursor:pointer;opacity:0;animation:tg-fadein .6s ease .8s forwards}
+.tg-skip:hover,.tg-skip:focus-visible{color:#efe6d8;border-color:rgba(239,230,216,.5);outline:none}
+.tg-replay{position:absolute;right:24px;bottom:22px;opacity:0;animation:tg-fadein .8s ease .4s forwards}
+
+/* reduced motion */
+.s-rm .tg-cam{animation:none}
+.s-rm.s-pushed .tg-push{transform:none}
+.s-rm .tg-buzz,.s-rm .tg-sbuzz,.s-rm .tg-glass{animation:none!important}
+.s-rm .tg-dust span{animation:none}
+.s-rm.s-call .tg-ring{animation:none;opacity:.6}
+
+@keyframes tg-drift{0%{transform:translate(0,0) rotate(0deg)}50%{transform:translate(-3px,2px) rotate(.07deg)}100%{transform:translate(2px,-2px) rotate(-.05deg)}}
+@keyframes tg-sleep{0%{opacity:0}45%{opacity:.62}100%{opacity:1}}
+@keyframes tg-buzz{
+0%{transform:translate(0,0) rotate(0deg)}
+12%{transform:translate(1.3px,-.5px) rotate(.22deg)}
+25%{transform:translate(-1px,.7px) rotate(-.18deg)}
+37%{transform:translate(.8px,.9px) rotate(.12deg)}
+50%{transform:translate(-1.4px,-.3px) rotate(-.26deg)}
+62%{transform:translate(1.1px,.4px) rotate(.2deg)}
+75%{transform:translate(-.6px,-.8px) rotate(-.1deg)}
+87%{transform:translate(1.4px,.2px) rotate(.16deg)}
+100%{transform:translate(0,0) rotate(0deg)}}
+@keyframes tg-buzz-s{
+0%{transform:translate(0,0)}
+25%{transform:translate(-.5px,.35px)}
+50%{transform:translate(-.7px,-.15px)}
+75%{transform:translate(-.3px,-.4px)}
+100%{transform:translate(0,0)}}
+@keyframes tg-glint{0%{transform:translate(0,0)}33%{transform:translate(-1px,.6px)}66%{transform:translate(.8px,-.5px)}100%{transform:translate(0,0)}}
+@keyframes tg-ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+@keyframes tg-grain{0%{transform:translate(0,0)}33%{transform:translate(-9px,6px)}66%{transform:translate(7px,-8px)}100%{transform:translate(0,0)}}
+@keyframes tg-dust{0%{transform:translate(0,0);opacity:0}25%{opacity:.55}75%{opacity:.35}100%{transform:translate(34px,-58px);opacity:0}}
+@keyframes tg-fadein{from{opacity:0}to{opacity:1}}
+@keyframes tg-fadeplace{from{opacity:0;transform:none}to{opacity:1;transform:none}}

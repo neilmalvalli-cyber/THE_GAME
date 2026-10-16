@@ -1,0 +1,19 @@
+.flat-desk { position: fixed; inset: var(--topbar-h) 0 0 0; z-index: 5; overflow: auto; padding: 32px 16px 48px; background: radial-gradient(ellipse 80% 70% at 50% 40%, #3b2817, #160e07 70%); }
+.flat-desk__note { text-align: center; color: rgba(233,223,201,.6); font-size: 12px; margin: 0 0 24px; }
+.flat-desk__files { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; }
+.flat-file { position: relative; width: 170px; height: 220px; padding: 18px 14px; text-align: left; border: 0; cursor: pointer; border-radius: 2px; color: #2a1d14;
+  background: linear-gradient(160deg, #d6b47a, #c29a5c); box-shadow: 0 12px 26px rgba(0,0,0,.5); transition: transform .3s var(--ease-out); }
+.flat-file:hover { transform: translateY(-6px) !important; }
+.flat-file__tab { position: absolute; top: -14px; right: 18px; padding: 4px 10px; background: #cca76a; font: 13px var(--font-type); border-radius: 3px 3px 0 0; }
+.flat-file__stamp { display: block; margin-top: 46px; font: 700 26px var(--font-type); color: rgba(122,28,22,.85); border: 2px solid rgba(122,28,22,.7); padding: 2px 6px; transform: rotate(-4deg); width: max-content; }
+.flat-file__title { display: block; margin-top: 18px; font: 14px var(--font-type); text-transform: uppercase; }
+.flat-case { max-width: 820px; margin: 0 auto; }
+.flat-case h2 { font: 500 24px var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--ivory); }
+.flat-case__photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 22px; margin-top: 22px; }
+.flat-photo { display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 16px; background: #ece6d4; border: 0; cursor: pointer; color: #222; box-shadow: 0 10px 24px rgba(0,0,0,.5); transition: transform .3s var(--ease-out); }
+.flat-photo.is-selected { outline: 2px solid var(--crimson-bright); }
+.flat-photo:hover { transform: translateY(-5px) rotate(0deg) !important; }
+.flat-photo__img { position: relative; aspect-ratio: 1; background: linear-gradient(160deg, #2c2c2a, #12100e); display: grid; place-items: center; }
+.flat-photo__img b { font: 700 22px var(--font-type); color: rgba(200,40,34,.9); border: 2px solid currentColor; padding: 2px 8px; transform: rotate(-12deg); }
+.flat-photo__label { font: 20px 'Permanent Marker', cursive; text-align: center; }
+.flat-photo__title { font: 12px var(--font-type); text-transform: uppercase; text-align: center; }
